@@ -1,0 +1,27 @@
+{
+  "name": "HexEmpireAI",
+  "version": "1.0.0",
+  "description": "Hex Empire AI Battle",
+  "main": "server.js",
+  "dependencies": {
+    "ejs": "^3.1.5",
+    "express": "^4.17.1",
+    "http": "^0.0.1-security",
+    "serve-static": "^1.14.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samuelyuan/HexEmpireAI.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/samuelyuan/HexEmpireAI/issues"
+  },
+  "homepage": "https://github.com/samuelyuan/HexEmpireAI#readme"
+}
