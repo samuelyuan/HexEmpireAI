@@ -3,7 +3,7 @@ import { MapRender } from './MapRender.js'
 
 class Game {
   constructor() {
-    this.mapRender = new MapRender();    
+    this.mapRender = new MapRender();
   }
 
   generateNewBoard() {
@@ -114,11 +114,7 @@ class Game {
     board.turn_party = turnParty;
     board.duel = this.isDuel(board);
 
-    var movePoints = 5;
-    var movableArmyCount = map.getMovableArmies(turnParty, board).length;
-    if (movePoints > movableArmyCount) {
-      movePoints = movableArmyCount;
-    }
+    const movePoints = map.getMovePoints(turnParty, board);
 
     map.cleanupTurn(board);
     map.updateBoard(board);
