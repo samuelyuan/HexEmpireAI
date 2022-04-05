@@ -1,7 +1,9 @@
 import { Map } from './Map.js'
+import { MapRender } from './MapRender.js'
 
 class Game {
   constructor() {
+    this.mapRender = new MapRender();    
   }
 
   generateNewBoard() {
@@ -75,7 +77,7 @@ class Game {
       map.unitsSpawn(p, board);
       map.updateBoard(board);
     }
-    map.drawMap(board);
+    this.mapRender.drawMap(board);
     this.turns = 0;
   }
 
@@ -129,7 +131,7 @@ class Game {
       }
       map.unitsSpawn(turnParty, board);
     }
-    map.drawMap(board);
+    this.mapRender.drawMap(board);
   }
 
   isDuel(board) {
