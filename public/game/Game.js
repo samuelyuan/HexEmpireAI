@@ -4,6 +4,27 @@ import { MapRender } from './MapRender.js'
 class Game {
   constructor() {
     this.mapRender = new MapRender();
+    this.images = this.prepareImages();
+  }
+
+  prepareImages() {
+    var images = {};
+    for (var i = 1; i <= 6; i++) {
+      images["grassBg" + i] = { img: null , path: 'images/l_' + i + '.png', status: 'none' };
+    }
+    for (var i = 1; i <= 6; i++) {
+      images["seaBg" + i] = { img: null , path: 'images/m_' + i + '.png', status: 'none' };
+    }
+    for (var i = 1; i <= 6; i++) {
+      images["townBgGrass" + i] = { img: null , path: 'images/c_' + i + '.png', status: 'none' };
+    }
+    images["city"] = { img: null , path: 'images/city.png', status: 'none' };
+    images["port"] = { img: null , path: 'images/port.png', status: 'none' };
+    images["capital0"] = { img: null , path: 'images/capital_red.png', status: 'none' };
+    images["capital1"] = { img: null , path: 'images/capital_violet.png', status: 'none' };
+    images["capital2"] = { img: null , path: 'images/capital_blue.png', status: 'none' };
+    images["capital3"] = { img: null , path: 'images/capital_green.png', status: 'none' };
+    return images;
   }
 
   generateNewBoard() {
@@ -56,18 +77,43 @@ class Game {
     this.generateNewMap(mapNumber);
   }
 
+  loadImage(ref) {
+    return new Promise(function(resolve) {
+      ref.img = new Image();
+      ref.img.onload  = _ => { ref.status='Image loaded'; resolve(); };
+      ref.img.onerror = _ => { ref.status='Failed to load image'; resolve(); };
+      ref.img.src = ref.path;
+    });
+  }
+
   generateNewMap(mapNumber) {
     this.mapNumber = mapNumber;
 
     this.board = this.generateNewBoard();
-    this.map = new Map(this.mapNumber);
-    this.map.generateMap(this.board, this.mapNumber);
-    this.map.updateBoard(this.board);
-    this.map.calcAIHelpers(this.board);
-    this.initGame();
+    this.map = new Map(this.mapNumber, this.images);
 
-    let mapStatus = document.getElementById('mapStatus');
-    mapStatus.innerHTML = "<b>Map</b> " + this.map.mapNumber + ", <b>Turn</b> " + (this.turns + 1);
+    var imagesToLoad = [];
+    for (const [key, value] of Object.entries(this.images)) {
+      imagesToLoad.push(this.loadImage(this.images[key]))
+    }
+
+    var self = this;
+    Promise
+      .all(imagesToLoad)
+      .then(function(){
+        self.map.generateMap(self.board, self.mapNumber);
+        const ctx = document.getElementById('map').getContext('2d');
+        ctx.drawImage(self.board.background_2, 0, 0);
+        self.map.updateBoard(self.board);
+        self.map.calcAIHelpers(self.board);
+        self.initGame();
+
+        let mapStatus = document.getElementById('mapStatus');
+        mapStatus.innerHTML = "<b>Map</b> " + self.map.mapNumber + ", <b>Turn</b> " + (self.turns + 1);
+
+        var startBattleButton = document.getElementById('startBattleButton');
+        startBattleButton.disabled = false;
+      });
   }
 
   initGame() {
@@ -77,7 +123,7 @@ class Game {
       map.unitsSpawn(p, board);
       map.updateBoard(board);
     }
-    this.mapRender.drawMap(board);
+    this.mapRender.drawMap(board, this.images);
     this.turns = 0;
   }
 
@@ -127,7 +173,7 @@ class Game {
       }
       map.unitsSpawn(turnParty, board);
     }
-    this.mapRender.drawMap(board);
+    this.mapRender.drawMap(board, this.images);
   }
 
   isDuel(board) {

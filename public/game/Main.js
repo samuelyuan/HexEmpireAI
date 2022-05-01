@@ -29,6 +29,7 @@ $(function(){
   };
 
   var startBattleButton = document.getElementById('startBattleButton');
+  startBattleButton.disabled = true; // Disable until map is loaded
   startBattleButton.onclick = function() {
     if (game.isVictory()) {
       // Reset map

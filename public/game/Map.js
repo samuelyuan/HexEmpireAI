@@ -2,7 +2,7 @@ import { Bot } from './Bot.js'
 import { Pathfinder } from './Pathfinder.js'
 
 class Map {
-  constructor(mapNumber) {
+  constructor(mapNumber, images) {
     this.towns = this.generateAllTowns();
     this.mapNumber = mapNumber;
     if (this.mapNumber < 0) {
@@ -14,6 +14,7 @@ class Map {
 
     this.pathfinder = new Pathfinder();
     this.bot = new Bot(this.pathfinder);
+    this.images = images;
   }
 
   setSeed(seed) {
@@ -22,34 +23,27 @@ class Map {
 
   generateAllTowns() {
     return [
-      "Abu Dhabi","Abuja","Accra","Addis Ababa","Algiers","Amman","Amsterdam","Ankara","Antananarivo","Apia","Ashgabat","Asmara","Astana","Asunción","Athens",
-      "Baghdad","Baku","Bamako","Bangkok","Bangui","Banjul","Barcelona","Basseterre","Beijing","Beirut","Belgrade","Belmopan","Berlin","Bern","Bishkek","Bissau","Bogotá","Brasília","Bratislava","Brazzaville","Bridgetown","Brussels","Bucharest","Budapest","Buenos Aires","Bujumbura",
-      "Cairo","Canberra","Cape Town","Caracas","Castries","Chicago","Chisinau","Conakry","Copenhagen","Cotonou",
-      "Dakar","Dallas","Damascus","Dhaka","Dili","Djibouti","Dodoma","Doha","Dublin","Dushanbe","Delhi",
-      "Freetown","Funafuti",
-      "Gabarone","Georgetown","Guatemala City",
-      "Hague","Hanoi","Harare","Havana","Helsinki","Honiara","Hong Kong","Houston",
-      "Islamabad",
-      "Jakarta","Jerusalem","Kabul","Kampala","Kathmandu","Khartoum","Kyiv","Kigali","Kingston","Kingstown","Kinshasa","Kuala Lumpur","Kuwait City",
-      "La Paz","Liberville","Lilongwe","Lima","Lisbon","Ljubljana","Lobamba","Lomé","London","Luanda","Lusaka","Luxembourg",
-      "Madrid","Majuro","Malé","Managua","Manama","Manila","Maputo","Maseru","Mbabane","Melekeok","Mexico City","Minsk","Mogadishu","Monaco","Monrovia","Montevideo","Moroni","Moscow","Munich","Muscat",
-      "Nairobi","Nassau","Naypyidaw","N\'Djamena","New Delhi","Niamey","Nicosia","Nouakchott","Nuku\'alofa","Nuuk",
-      "Oslo","Ottawa","Ouagadougou",
-      "Palikir","Panama City","Paramaribo","Paris","Philadelphia","Phnom Penh","Phoenix","Podgorica","Prague","Praia","Pretoria","Pyongyang",
-      "Quito",
-      "Rabat","Ramallah","Reykjavík","Riga","Riyadh","Rome","Roseau",
-      "San José","San Marino","San Salvador","Sanaá","Santiago","Santo Domingo","Sao Tomé","Sarajevo","Seoul","Seville","Singapore","Skopje","Sofia","South Tarawa","St. George\'s","St. John\'s","Stockholm","Sucre","Suva",
-      "Taipei","Tallinn","Tashkent","Tbilisi","Tegucigalpa","Teheran","Thimphu","Tirana","Tokyo","Tripoli","Tunis",
-      "Ulaanbaatar",
-      "Vaduz","Valencia","Valletta","Victoria","Vienna","Vientiane","Vilnius",
-      "Warsaw","Washington","Wellington","Windhoek",
-      "Yamoussoukro","Yaoundé","Yerevan",
-      "Zagreb","Zaragoza","Zielona Góra",
-      "Poznań","Wrocław","Gdańsk","Szczecin","Łódź","Białystok","Toruń","St. Petersburg","Turku","Örebro","Chengdu","Wuppertal","Frankfurt","Düsseldorf","Essen","Duisburg","Magdeburg",
-      "Bonn","Brno","Tours","Bordeaux","Nice","Lyon","Stara Zagora","Milan","Bologna","Sydney","Venice","New York","Graz","Birmingham","Naples","Cologne","Turin","Marseille","Leeds",
-      "Kraków","Palermo","Genoa","Stuttgart","Dortmund","Rotterdam","Glasgow","Málaga","Bremen","Sheffield","Antwerp","Plovdiv","Thessaloniki","Kaunas","Lublin","Varna","Ostrava","Iaşi",
-      "Katowice","Cluj-Napoca","Timişoara","Constanţa","Pskov","Vitebsk","Arkhangelsk","Novosibirsk","Samara","Omsk","Chelyabinsk","Ufa","Volgograd","Perm","Kharkiv","Odessa","Donetsk",
-      "Dnipropetrovsk","Los Angeles","Detroit","Indianapolis","San Francisco","Atlanta","Austin","Vermont","Toronto","Montreal","Vancouver","Gdynia","Edmonton"
+      "Abu Dhabi", "Abuja", "Accra", "Addis Ababa", "Algiers", "Amman", "Amsterdam", "Ankara", "Antananarivo", "Apia", "Ashgabat", "Asmara", "Astana", "Asunción", "Athens",
+		  "Baghdad", "Baku", "Bamako", "Bangkok", "Bangui", "Banjul", "Basseterre", "Beijing", "Beirut", "Belgrade", "Belmopan", "Berlin", "Bern", "Bishkek", "Bissau", "Bogotá",
+		  "Brasília", "Bratislava", "Brazzaville", "Bridgetown", "Brussels", "Bucharest", "Budapest", "Buenos Aires", "Bujumbura", "Cairo", "Canberra",
+		  "Cape Town", "Caracas", "Castries", "Chisinau", "Conakry", "Copenhagen", "Cotonou",
+		  "Dakar", "Damascus", "Dhaka", "Dili", "Djibouti", "Dodoma", "Doha", "Dublin", "Dushanbe", "Delhi",
+		  "Freetown", "Funafuti", "Gabarone", "Georgetown", "Guatemala City", "Hague", "Hanoi", "Harare", "Havana", "Helsinki", "Honiara", "Hong Kong",
+		  "Islamabad", "Jakarta", "Jerusalem", "Kabul", "Kampala", "Kathmandu", "Khartoum", "Kyiv", "Kigali", "Kingston", "Kingstown", "Kinshasa", "Kuala Lumpur", "Kuwait City",
+		  "La Paz", "Liberville", "Lilongwe", "Lima", "Lisbon", "Ljubljana", "Lobamba", "Lomé", "London", "Luanda", "Lusaka", "Luxembourg",
+		  "Madrid", "Majuro", "Malé", "Managua", "Manama", "Manila", "Maputo", "Maseru", "Mbabane", "Melekeok", "Mexico City", "Minsk", "Mogadishu", "Monaco", "Monrovia", "Montevideo", "Moroni", "Moscow", "Muscat",
+		  "Nairobi", "Nassau", "Naypyidaw", "N'Djamena", "New Delhi", "Niamey", "Nicosia", "Nouakchott", "Nuku'alofa", "Nuuk",
+		  "Oslo", "Ottawa", "Ouagadougou", "Palikir", "Panama City", "Paramaribo", "Paris", "Phnom Penh", "Podgorica", "Prague", "Praia", "Pretoria", "Pyongyang",
+		  "Quito", "Rabat", "Ramallah", "Reykjavík", "Riga", "Riyadh", "Rome", "Roseau",
+		  "San José", "San Marino", "San Salvador", "Sanaá", "Santiago", "Santo Domingo", "Sao Tomé", "Sarajevo", "Seoul", "Singapore", "Skopje", "Sofia", "South Tarawa", "St. George's", "St. John's", "Stockholm", "Sucre", "Suva",
+		  "Taipei", "Tallinn", "Tashkent", "Tbilisi", "Tegucigalpa", "Teheran", "Thimphu", "Tirana", "Tokyo", "Tripoli", "Tunis", "Ulaanbaatar",
+		  "Vaduz", "Valletta", "Victoria", "Vienna", "Vientiane", "Vilnius", "Warsaw", "Washington", "Wellington", "Windhoek", "Yamoussoukro", "Yaoundé", "Yerevan", "Zagreb", "Zielona Góra",
+		  "Poznań", "Wrocław", "Gdańsk", "Szczecin", "Łódź", "Białystok", "Toruń", "St. Petersburg", "Turku", "Örebro", "Chengdu",
+		  "Wuppertal", "Frankfurt", "Düsseldorf", "Essen", "Duisburg", "Magdeburg", "Bonn", "Brno", "Tours", "Bordeaux", "Nice", "Lyon", "Stara Zagora", "Milan", "Bologna", "Sydney", "Venice", "New York",
+		  "Barcelona", "Zaragoza", "Valencia", "Seville", "Graz", "Munich", "Birmingham", "Naples", "Cologne", "Turin", "Marseille", "Leeds", "Kraków", "Palermo", "Genoa",
+		  "Stuttgart", "Dortmund", "Rotterdam", "Glasgow", "Málaga", "Bremen", "Sheffield", "Antwerp", "Plovdiv", "Thessaloniki", "Kaunas", "Lublin", "Varna", "Ostrava", "Iaşi", "Katowice",
+		  "Cluj-Napoca", "Timişoara", "Constanţa", "Pskov", "Vitebsk", "Arkhangelsk", "Novosibirsk", "Samara", "Omsk", "Chelyabinsk", "Ufa", "Volgograd", "Perm", "Kharkiv", "Odessa", "Donetsk", "Dnipropetrovsk",
+		  "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia", "Dallas", "Detroit", "Indianapolis", "San Francisco", "Atlanta", "Austin", "Vermont", "Toronto", "Montreal", "Vancouver", "Gdynia", "Edmonton",
     ];
   }
 
@@ -209,11 +203,29 @@ class Map {
   }
 
   addTown(x, y, board) {
-    var bitmap1Src = "images/cd_" + this.rand(6) + ".png";
-    var bitmap2Src = "images/c_" + this.rand(6) + ".png";
-    var flip1 = this.rand(2);
-    var flip2 = this.rand(2);
-    var rotateAngle = this.rand(360);
+    const townBgDirtImg = "images/cd_" + this.rand(6) + ".png";
+    const townBgGrassImg = this.images["townBgGrass" + (this.rand(6) + 1)].img;
+    const flipH = this.rand(2);
+    const flipV = this.rand(2);
+    const rotateDegrees = this.rand(360);
+
+    const ctx = board.background_2.getContext('2d');
+    const img = townBgGrassImg;
+    const width = img.width;
+    const height = img.height;
+    const field = this.getField(x, y, board);
+    const destX = field._x - (width / 2);
+    const destY = field._y - (height / 2);
+
+    ctx.translate(destX, destY);
+    this.rotateImageMatrix(ctx, img, rotateDegrees);
+    this.flipImageMatrix(ctx, img, flipH, flipV);
+    ctx.drawImage(img, 0, 0);
+    ctx.resetTransform();
+
+    let region = new Path2D();
+    region.rect(0, 0, 750, 465);
+    ctx.clip(region);
   }
 
   findNeighbours(field, board) {
@@ -233,6 +245,35 @@ class Map {
       field.neighbours[4] = this.getField(field.fx, field.fy - 1, board);
       field.neighbours[5] = this.getField(field.fx + 1, field.fy, board);
     }
+  }
+
+  flipImageMatrix(ctx, image, flipH, flipV) {
+    const width = image.width;
+    const height = image.height;
+
+    if (flipH > 0 && flipV > 0) {
+      ctx.translate(width, height);
+      ctx.scale(-1, -1);
+    } else if (flipH > 0) {
+      ctx.translate(width, 0);
+      ctx.scale(-1, 1);
+    } else if (flipV > 0) {
+      ctx.translate(0, height);
+      ctx.scale(1, -1);
+    }
+  }
+
+  degreesToRadians(degrees) {
+	   return (Math.PI / 180) * degrees;
+  }
+
+  rotateImageMatrix(ctx, image, rotateDegrees) {
+    const width = image.width;
+    const height = image.height;
+
+    ctx.translate(width / 2, height / 2);
+    ctx.rotate(this.degreesToRadians(rotateDegrees));
+    ctx.translate(-width / 2, -height / 2);
   }
 
   createBackground(board) {
@@ -258,22 +299,27 @@ class Map {
         }
 
         gridImages[index].dirtBg.src = "images/ld_" + (this.rand(6) + 1) + ".png";
-        gridImages[index].grassBg.src = "images/l_" + (this.rand(6) + 1) + ".png";
+        gridImages[index].grassBg = this.images["grassBg" + (this.rand(6) + 1)].img;
 
-        var flip1 = this.rand(2);
-        var flip2 = this.rand(2);
-        var rotateAngle = this.rand(4) * 90;
-        gridImages[index].horizontalFlip = flip1;
-        gridImages[index].verticalFlip = flip2;
-        gridImages[index].rotationDegrees = rotateAngle;
+        const flipH = this.rand(2);
+        const flipV = this.rand(2);
+        const rotateDegrees = this.rand(4) * 90;
 
-        /*var self = this;
-        gridImages[index].dirtBg.onload = function() {
-          self.pasteBitmap(gridImages[index], gridImages[index].dirtBg, board.background_1);
-        }
-        gridImages[index].grassBg.onload = function() {
-          self.pasteBitmap(gridImages[index], gridImages[index].grassBg, board.background_2);
-        }*/
+        const ctx = board.background_2.getContext('2d');
+        var img = gridImages[index].grassBg;
+        var destX = (x * 125) - 15;
+        var destY = (y * 125) - 15;
+
+        ctx.translate(destX, destY);
+        this.rotateImageMatrix(ctx, img, rotateDegrees);
+        this.flipImageMatrix(ctx, img, flipH, flipV);
+
+        ctx.drawImage(img, 0, 0);
+        ctx.resetTransform();
+
+        let region = new Path2D();
+        region.rect(0, 0, 800, 465);
+        ctx.clip(region);
       }
     }
   }
@@ -523,11 +569,24 @@ class Map {
     var flipY = [1,1,1,0,0,0];
     for (var x = 0; x < board.hw_xmax; x++) {
       for (var y = 0; y < board.hw_ymax; y++) {
-        if (this.getField(x, y, board).type == "water") {
-          const waterImgSrc = "images/m_" + this.rand(6) + ".png";
-          const flip1 = this.rand(2);
-          const flip2 = this.rand(2);
-          const rotateAngle = this.rand(2) * 180;
+        const field = this.getField(x, y, board);
+        if (field.type == "water") {
+          const seaBg = this.images["seaBg" + (this.rand(6) + 1)].img;
+          const flipH = this.rand(2);
+          const flipV = this.rand(2);
+          const rotateDegrees = this.rand(2) * 180;
+          const ctx = board.background_sea.getContext('2d');
+
+          const img = seaBg;
+          const width = seaBg.width;
+          const height = seaBg.height;
+          const destX = field._x - (width / 2.0);
+          const destY = field._y - (height / 2.0);
+          ctx.translate(destX, destY);
+          this.rotateImageMatrix(ctx, img, rotateDegrees);
+          this.flipImageMatrix(ctx, img, flipH, flipV);
+          ctx.drawImage(img, 0, 0);
+          ctx.resetTransform();
         }
       }
     }
@@ -641,7 +700,12 @@ class Map {
       for (var x = 0; x < board.hw_xmax; x++) {
         for (var y = 0; y < board.hw_ymax; y++) {
           var field = this.getField(x, y, board);
-          field.profitability[partyIndex] = -this.pathfinder.findPath(field, board.hw_parties_capitals[partyIndex], [], true).length;
+          var path = this.pathfinder.findPath(field, board.hw_parties_capitals[partyIndex], [], true);
+          if (!path) {
+            console.warn("Path is undefined for (" + x + "," + y + ")");
+            continue;
+          }
+          field.profitability[partyIndex] = -path.length;
           var neighbours = this.pathfinder.getFurtherNeighbours(field);
           neighbours.push(field);
           for (var n = 0; n < neighbours.length; n++) {

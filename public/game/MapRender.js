@@ -1,6 +1,12 @@
 class MapRender {
-  drawMap(board) {
+  drawMap(board, images) {
+    const canvas = document.getElementById('map');
     const ctx = document.getElementById('map').getContext('2d');
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(board.background_2, 0, 0);
+    ctx.drawImage(board.background_sea, 0, 0);
+
     const partyColorStrings = [
       "rgba(255, 0, 0, 0.5)",
       "rgba(255, 0, 255, 0.5)",
@@ -13,11 +19,7 @@ class MapRender {
         const field = board.field["f" + x + "x" + y];
         const xCenter = field._x;
         const yCenter = field._y;
-        if (field.type === "water") {
-          this.drawHexTile(ctx, xCenter, yCenter, "#263988");
-        } else if (field.type === "land") {
-          this.drawHexTile(ctx, xCenter, yCenter, "#97c348");
-        }
+        this.drawHexOutline(ctx, xCenter, yCenter);
 
         // Draw which party controls the tile
         if (field.party != -1) {
@@ -28,49 +30,94 @@ class MapRender {
           }
         }
 
-        // Draw army
-        const armyColor = ["#ff0000", "#ff00ff", "#00bbff", "#00ff00"];
-        if (field.army) {
-          this.drawCircle(ctx, xCenter, yCenter, 15, "#ffffff", field.army.party >= 0 ? armyColor[field.army.party] : "#000000");
-          ctx.fillStyle = 'black';
-          ctx.font = '12px serif';
-          ctx.fillText(field.army.count + "/" + field.army.morale, xCenter - 12, yCenter + 2.5);
-        }
-
-        // Capital city should be marked with different color
-        const townColor = field.capital >= 0 ? armyColor[field.capital] : "#0000a7";
         // Draw towns and ports
         if (field.estate === "town") {
+          // Capital city should use a different image
+          const cityImg = field.capital >= 0 ? images["capital" + field.capital].img : images.city.img;
+          const width = cityImg.width;
+          const height = cityImg.height;
           if (!field.army) {
-            this.drawCircle(ctx, xCenter, yCenter, 7.5, townColor, townColor);
-            ctx.fillStyle = 'black';
-            ctx.font = '10px serif';
-            ctx.fillText(field.town_name, xCenter - 10, yCenter - 10);
+            ctx.drawImage(cityImg, xCenter - (width / 2), yCenter - (height / 2));
           } else {
-            this.drawCircle(ctx, xCenter + 10, yCenter - 10, 5, townColor, townColor);
+            ctx.translate(xCenter - (width / 2) + 17, yCenter - (height / 2) - 5);
+            ctx.scale(0.9, 0.9);
+            ctx.drawImage(cityImg, 0, 0);
+            ctx.resetTransform();
           }
         } else if (field.estate === "port") {
+          const portImg = images.port.img;
+          const width = portImg.width;
+          const height = portImg.height;
           if (!field.army) {
-            this.drawCircle(ctx, xCenter, yCenter, 15, townColor, townColor);
-            ctx.fillStyle = 'black';
-            ctx.font = '10px serif';
-            ctx.fillText(field.town_name, xCenter - 10, yCenter - 10);
+            ctx.drawImage(portImg, xCenter - (width / 2), yCenter - (height / 2));
           } else {
-            this.drawCircle(ctx, xCenter + 10, yCenter - 10, 5, townColor, townColor);
+            ctx.translate(xCenter - (width / 2) + 25, yCenter - (height / 2) - 5)
+            ctx.scale(0.5, 0.5);
+            ctx.drawImage(portImg, 0, 0);
+            ctx.resetTransform();
           }
+        }
+
+        this.drawArmy(ctx, field, xCenter, yCenter);
+      }
+    }
+
+    this.drawTownNames(ctx, board);
+  }
+
+  drawArmy(ctx, field, xCenter, yCenter) {
+    const armyColor = ["#ff0000", "#ff00ff", "#00bbff", "#00ff00"];
+    if (field.army) {
+      this.drawCircle(ctx, xCenter, yCenter, 15, "#ffffff", field.army.party >= 0 ? armyColor[field.army.party] : "#000000");
+      ctx.fillStyle = 'black';
+      ctx.font = '12px serif';
+      ctx.fillText(field.army.count + "/" + field.army.morale, xCenter - 12, yCenter + 2.5);
+    }
+  }
+
+  drawTownNames(ctx, board) {
+    for (var x = 0; x < board.hw_xmax; x++) {
+      for (var y = 0; y < board.hw_ymax; y++) {
+        const field = board.field["f" + x + "x" + y];
+        const xCenter = field._x;
+        const yCenter = field._y;
+
+        // Draw towns and ports
+        if (field.estate === "town" || field.estate === "port") {
+          ctx.fillStyle = 'white';
+          ctx.font = '12px serif';
+          ctx.fillText(field.town_name, xCenter - (10 + field.town_name.length), yCenter - 17);
         }
       }
     }
+  }
+
+  drawHexOutline(ctx, xCenter, yCenter) {
+    const numberOfSides = 6;
+    const size = 25;
+    ctx.beginPath();
+    ctx.moveTo(xCenter - 12.5, yCenter - 20);
+    ctx.lineTo(xCenter - 24, yCenter - 0);
+    ctx.lineTo(xCenter - 12.5, yCenter + 20);
+    ctx.lineTo(xCenter + 12.5, yCenter + 20);
+    ctx.lineTo(xCenter + 24, yCenter + 0);
+    ctx.lineTo(xCenter + 12.5, yCenter - 20);
+    ctx.strokeStyle = "rgba(255, 255, 102, 0.3)";
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+    ctx.closePath();
   }
 
   drawHexTile(ctx, xCenter, yCenter, color) {
     const numberOfSides = 6;
     const size = 25;
     ctx.beginPath();
-    ctx.moveTo(xCenter + size * Math.cos(0), yCenter + size * Math.sin(0));
-    for (var i = 1; i <= numberOfSides; i++) {
-      ctx.lineTo(xCenter + size * Math.cos(i * 2 * Math.PI / numberOfSides), yCenter + size * Math.sin(i * 2 * Math.PI / numberOfSides));
-    }
+    ctx.moveTo(xCenter - 12.5, yCenter - 20);
+    ctx.lineTo(xCenter - 25, yCenter - 0);
+    ctx.lineTo(xCenter - 12.5, yCenter + 20);
+    ctx.lineTo(xCenter + 12.5, yCenter + 20);
+    ctx.lineTo(xCenter + 25, yCenter + 0);
+    ctx.lineTo(xCenter + 12.5, yCenter - 20);
     ctx.strokeStyle = "#000000";
     ctx.lineWidth = 0.1;
     ctx.fillStyle = color;
