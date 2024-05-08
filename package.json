@@ -4,7 +4,7 @@
   "description": "Hex Empire AI Battle",
   "main": "server.js",
   "dependencies": {
-    "ejs": "^3.1.9",
+    "ejs": "^3.1.10",
     "express": "^4.19.2",
     "http": "^0.0.1-security",
     "serve-static": "^1.15.0"
