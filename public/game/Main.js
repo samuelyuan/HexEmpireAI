@@ -54,6 +54,15 @@ $(function(){
        startBattleButton.disabled = true;
 
        game.setHumanPlayer(parseInt(country));
+       
+       var factionNames = ["Redosia", "Violetnam", "Bluegaria", "Greenland"];
+       var factionColors = ["red", "purple", "blue", "green"];
+       
+       var badge = document.getElementById('playerBadge');
+       badge.style.display = 'inline-block';
+       badge.className = "chip white-text " + factionColors[parseInt(country)];
+       document.getElementById('playerFactionName').innerText = factionNames[parseInt(country)];
+
        game.startBattle();
     };
 

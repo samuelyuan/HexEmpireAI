@@ -19,16 +19,23 @@ class MapRender {
         const field = board.field["f" + x + "x" + y];
         const xCenter = field._x;
         const yCenter = field._y;
-        this.drawHexOutline(ctx, xCenter, yCenter);
 
         // Draw which party controls the tile
         if (field.party != -1) {
           if (field.party >= 0 && field.party < 4) {
-            this.drawHexTile(ctx, xCenter, yCenter, partyColorStrings[field.party]);
+            let color = partyColorStrings[field.party];
+            // Highlight human player faction
+            if (field.party == board.human) {
+               color = color.replace("0.5)", "0.75)");
+            }
+            this.drawHexTile(ctx, xCenter, yCenter, color);
           } else {
             this.drawHexTile(ctx, xCenter, yCenter, "rgba(0, 0, 0, 0.5)");
           }
         }
+        
+        // Draw Grid (Base)
+        this.drawHexOutline(ctx, xCenter, yCenter, "rgba(0,0,0,0.2)", 0.5);
 
         // Draw towns and ports
         if (field.estate === "town") {
@@ -62,7 +69,54 @@ class MapRender {
       }
     }
 
+    this.drawTerritoryBorders(ctx, board);
     this.drawTownNames(ctx, board);
+  }
+
+  drawTerritoryBorders(ctx, board) {
+    const edgeMap = [3, 2, 1, 0, 5, 4];
+    
+    for (var x = 0; x < board.hw_xmax; x++) {
+      for (var y = 0; y < board.hw_ymax; y++) {
+        const field = board.field["f" + x + "x" + y];
+        if (field.party == -1) continue; 
+
+        let borderColor = "rgba(0,0,0,0.8)";
+        let borderWidth = 1;
+        if (field.party == board.human) {
+            borderColor = "#FFD700";
+            borderWidth = 3;
+        }
+
+        const xCenter = field._x;
+        const yCenter = field._y;
+        
+        const V = [
+            {x: xCenter - 12.5, y: yCenter - 20}, // V0 TopLeft
+            {x: xCenter - 25,   y: yCenter - 0},  // V1 MidLeft (fixed width 25)
+            {x: xCenter - 12.5, y: yCenter + 20}, // V2 BotLeft
+            {x: xCenter + 12.5, y: yCenter + 20}, // V3 BotRight
+            {x: xCenter + 25,   y: yCenter + 0},  // V4 MidRight
+            {x: xCenter + 12.5, y: yCenter - 20}  // V5 TopRight
+        ];
+
+        for (let i = 0; i < 6; i++) {
+            const neighbor = field.neighbours[i];
+            if (!neighbor || neighbor.party != field.party) {
+                const edgeIndex = edgeMap[i];
+                const vStart = V[edgeIndex];
+                const vEnd = V[(edgeIndex + 1) % 6];
+                
+                ctx.beginPath();
+                ctx.moveTo(vStart.x, vStart.y);
+                ctx.lineTo(vEnd.x, vEnd.y);
+                ctx.strokeStyle = borderColor;
+                ctx.lineWidth = borderWidth;
+                ctx.stroke();
+            }
+        }
+      }
+    }
   }
 
   drawArmy(ctx, field, xCenter, yCenter) {
@@ -93,7 +147,7 @@ class MapRender {
     }
   }
 
-  drawHexOutline(ctx, xCenter, yCenter) {
+  drawHexOutline(ctx, xCenter, yCenter, borderColor, borderWidth) {
     const numberOfSides = 6;
     const size = 25;
     ctx.beginPath();
@@ -103,8 +157,8 @@ class MapRender {
     ctx.lineTo(xCenter + 12.5, yCenter + 20);
     ctx.lineTo(xCenter + 24, yCenter + 0);
     ctx.lineTo(xCenter + 12.5, yCenter - 20);
-    ctx.strokeStyle = "rgba(255, 255, 102, 0.3)";
-    ctx.lineWidth = 0.5;
+    ctx.strokeStyle = borderColor || "rgba(255, 255, 102, 0.3)";
+    ctx.lineWidth = borderWidth || 0.5;
     ctx.stroke();
     ctx.closePath();
   }

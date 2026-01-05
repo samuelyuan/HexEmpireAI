@@ -262,6 +262,13 @@ class Game {
     // If not moving, check if we can select
     if (field.army && field.army.party == this.board.human) {
       if (field.army.moved) return;
+      
+      if (this.selectedArmy && this.selectedArmy == field.army) {
+        this.selectedArmy = null;
+        this.drawGame();
+        return;
+      }
+
       this.selectedArmy = field.army;
       this.drawGame();
       return;

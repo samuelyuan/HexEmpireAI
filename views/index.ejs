@@ -55,7 +55,12 @@
 
       <div class="row">
         <div class="col s12">
-           <h5 id="mapStatus">Map, Turn 1</h5>
+           <div class="valign-wrapper">
+             <h5 id="mapStatus" style="margin-right: 15px;">Map, Turn 1</h5>
+             <div id="playerBadge" class="chip" style="display:none;">
+                Playing as: <b id="playerFactionName">Faction</b>
+             </div>
+           </div>
            <div class="card-panel center-align">
               <canvas id="map" width="800" height="600"></canvas>
            </div>

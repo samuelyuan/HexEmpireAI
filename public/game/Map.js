@@ -1115,7 +1115,7 @@ class Map {
       field.army.moved = true;
       this.annexLand(army.party, field, board, false);
       this.updateBoard(board);
-      return false;
+      return true;
     }
     field.army = army;
     this.annexLand(army.party, field, board, false);
