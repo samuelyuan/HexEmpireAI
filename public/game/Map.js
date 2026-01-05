@@ -93,17 +93,40 @@ class Map {
   }
 
   getFieldXYFromScreenXY(board, screenX, screenY) {
-    const fieldX = Math.floor((screenX - (board.hw_fw / 2)) / (board.hw_fw / 4 * 3)) + 1;
-    var fieldY;
-    if (fieldX % 2 == 0) {
-      fieldY = Math.floor((screenY - (board.hw_fh / 2)) / board.hw_fh) + 1;
-    } else {
-      fieldY = Math.floor((screenY - board.hw_fh) /  board.hw_fh) + 1;
+    // Approximate location
+    const approxX = Math.floor((screenX - (board.hw_fw / 2)) / (board.hw_fw / 4 * 3));
+    const approxY = Math.floor((screenY - (board.hw_fh / 2)) / board.hw_fh);
+
+    // Check neighbors to find closest center
+    let bestDist = Infinity;
+    let bestField = { fieldX: -1, fieldY: -1 };
+
+    // Search range around approximation
+    for (let dx = -1; dx <= 2; dx++) {
+      for (let dy = -1; dy <= 2; dy++) {
+         const fx = approxX + dx;
+         const fy = approxY + dy;
+         
+         if (fx < 0 || fx >= board.hw_xmax || fy < 0 || fy >= board.hw_ymax) continue;
+
+         // Calculate center of this candidate
+         const centerX = fx * (board.hw_fw / 4 * 3) + board.hw_fw / 2;
+         let centerY;
+         if (fx % 2 == 0) {
+           centerY = fy * board.hw_fh + board.hw_fh / 2;
+         } else {
+           centerY = fy * board.hw_fh + board.hw_fh;
+         }
+
+         const dist = Math.pow(screenX - centerX, 2) + Math.pow(screenY - centerY, 2);
+         if (dist < bestDist) {
+           bestDist = dist;
+           bestField = { fieldX: fx, fieldY: fy };
+         }
+      }
     }
-    return {
-      fieldX: fieldX,
-      fieldY: fieldY,
-    }
+    
+    return bestField;
   }
 
   updateField(field, board) {

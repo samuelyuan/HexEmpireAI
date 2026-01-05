@@ -98,7 +98,7 @@ class Game {
     }
 
     var self = this;
-    Promise
+    return Promise
       .all(imagesToLoad)
       .then(function(){
         self.map.generateMap(self.board, self.mapNumber);
@@ -127,32 +127,163 @@ class Game {
     this.turns = 0;
   }
 
+  setHumanPlayer(partyId) {
+    this.board.human = partyId;
+    this.board.hw_parties_control[partyId] = "human";
+  }
+
+  startBattle() {
+    this.turns = 0;
+    this.board.turn_party = -1;
+    this.nextTurn();
+  }
+
+  nextTurn() {
+    this.board.turn_party++;
+    if (this.board.turn_party >= 4) {
+      this.board.turn_party = 0;
+      this.turns++;
+      let gamelogElement = document.getElementById('gamelog');
+      gamelogElement.innerHTML += "Turn " + (this.turns + 1) + "<br/>";
+      
+      if (this.turns >= 150 || this.isVictory()) {
+        document.getElementById('mapNumberInput').disabled = false;
+        document.getElementById('changeMapButton').disabled = false;
+        document.getElementById('randomMapButton').disabled = false;
+        document.getElementById('startBattleButton').disabled = false;
+        return;
+      }
+    }
+
+    this.board.turns = this.turns;
+    this.updateMapStatus();
+
+    // Skip dead parties
+    if (this.board.hw_parties_status[this.board.turn_party] == 0) {
+      this.nextTurn();
+      return;
+    }
+
+    this.map.cleanupTurn(this.board);
+    this.map.updateBoard(this.board);
+
+    if (this.board.hw_parties_control[this.board.turn_party] == "computer") {
+      this.runComputerTurn(this.map, this.board, this.board.turn_party);
+      setTimeout(() => this.nextTurn(), 200);
+    } else {
+      // Human turn
+      this.humanMovesLeft = this.map.getMovePoints(this.board.turn_party, this.board);
+      this.updateMapStatus();
+      
+      document.getElementById('endTurnButton').style.display = 'inline-block';
+      document.getElementById('endTurnButton').onclick = () => {
+         this.endHumanTurn();
+      };
+    }
+  }
+
+  endHumanTurn() {
+     document.getElementById('endTurnButton').style.display = 'none';
+     this.map.unitsSpawn(this.board.human, this.board);
+     this.selectedArmy = null;
+     this.drawGame();
+     this.nextTurn();
+  }
+
+  updateMapStatus() {
+    let mapStatus = document.getElementById('mapStatus');
+    let status = "<b>Map</b> " + this.map.mapNumber + ", <b>Turn</b> " + (this.turns + 1);
+    status += " | Player: " + this.board.hw_parties_names[this.board.turn_party];
+    if (this.board.turn_party == this.board.human) {
+      status += " | Moves: " + this.humanMovesLeft;
+    }
+    mapStatus.innerHTML = status;
+  }
+
+  drawGame() {
+    this.mapRender.drawMap(this.board, this.images);
+    if (this.selectedArmy) {
+      this.mapRender.drawSelection(this.selectedArmy.field);
+      const possibleMoves = this.map.pathfinder.getPossibleMoves(this.selectedArmy.field, true, false);
+      this.mapRender.drawValidMoves(possibleMoves, this.board);
+    }
+    if (this.hoveredField) {
+      this.mapRender.drawHover(this.hoveredField);
+    }
+  }
+
+  handleMouseMove(event) {
+    const canvas = document.getElementById('map');
+    const pos = this.getMousePos(canvas, event);
+    const fieldXY = this.map.getFieldXYFromScreenXY(this.board, pos.x, pos.y);
+    
+    if (fieldXY.fieldX < 0 || fieldXY.fieldX >= this.board.hw_xmax || fieldXY.fieldY < 0 || fieldXY.fieldY >= this.board.hw_ymax) {
+       this.hoveredField = null;
+    } else {
+       this.hoveredField = this.map.getField(fieldXY.fieldX, fieldXY.fieldY, this.board);
+    }
+    this.drawGame();
+  }
+
+  handleInput(event) {
+    if (this.board.turn_party != this.board.human) return;
+    if (this.humanMovesLeft <= 0) return;
+
+    const canvas = document.getElementById('map');
+    const pos = this.getMousePos(canvas, event);
+    const fieldXY = this.map.getFieldXYFromScreenXY(this.board, pos.x, pos.y);
+    
+    if (fieldXY.fieldX < 0 || fieldXY.fieldX >= this.board.hw_xmax || fieldXY.fieldY < 0 || fieldXY.fieldY >= this.board.hw_ymax) return;
+
+    const field = this.map.getField(fieldXY.fieldX, fieldXY.fieldY, this.board);
+    if (!field) return;
+
+    // Check if we can move first
+    if (this.selectedArmy && this.selectedArmy.party == this.board.human) {
+      const possibleMoves = this.map.pathfinder.getPossibleMoves(this.selectedArmy.field, true, false);
+      
+      if (possibleMoves.includes(field)) {
+        const success = this.map.moveArmy(this.selectedArmy, field, this.board);
+        if (success) {
+          this.humanMovesLeft--;
+          this.selectedArmy = null;
+          this.updateMapStatus();
+          this.map.updateArmies(this.board);
+          this.drawGame();
+          
+          if (this.humanMovesLeft <= 0) {
+             this.endHumanTurn();
+          }
+          return;
+        }
+      }
+    }
+
+    // If not moving, check if we can select
+    if (field.army && field.army.party == this.board.human) {
+      this.selectedArmy = field.army;
+      this.drawGame();
+      return;
+    }
+    
+    // Deselect if clicking elsewhere
+    if (this.selectedArmy) {
+        this.selectedArmy = null;
+        this.drawGame();
+    }
+  }
+
   isVictory() {
     return this.map.isVictory(this.board);
   }
 
-  runTurn() {
-    var board = this.board;
-    var map = this.map;
-    board.turns = this.turns;
-
-    let mapStatus = document.getElementById('mapStatus');
-    mapStatus.innerHTML = "<b>Map</b> " + this.map.mapNumber + ", <b>Turn</b> " + (this.turns + 1);
-
-    let gamelogElement = document.getElementById('gamelog');
-    gamelogElement.innerHTML += "Turn " + (this.turns + 1) + "<br/>";
-
-    for (var turnParty = 0; turnParty < board.hw_parties_count; turnParty++) {
-      this.runComputerTurn(map, board, turnParty);
-    }
-    this.turns++;
-  }
-
   getMousePos(canvas, event) {
     var rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
     return {
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top
+      x: (event.clientX - rect.left) * scaleX,
+      y: (event.clientY - rect.top) * scaleY
     };
   }
 

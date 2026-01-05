@@ -139,6 +139,60 @@ class MapRender {
     ctx.stroke();
     ctx.closePath();
   }
+
+  drawSelection(field) {
+    const ctx = document.getElementById('map').getContext('2d');
+    const x = field._x;
+    const y = field._y;
+    
+    ctx.beginPath();
+    ctx.arc(x, y, 20, 0, 2 * Math.PI);
+    ctx.strokeStyle = "#FFFFFF";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.arc(x, y, 22, 0, 2 * Math.PI);
+    ctx.strokeStyle = "rgba(0,0,0,0.5)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  drawValidMoves(fields, board) {
+    const ctx = document.getElementById('map').getContext('2d');
+    for (let i = 0; i < fields.length; i++) {
+      let field = fields[i];
+      let color = "rgba(255, 255, 255, 0.4)"; // Default move
+      
+      if (field.army) {
+        if (field.army.party != board.human) {
+           color = "rgba(255, 0, 0, 0.4)"; // Attack
+        } else {
+           color = "rgba(0, 255, 0, 0.4)"; // Merge
+        }
+      }
+      
+      this.drawHexTile(ctx, field._x, field._y, color);
+    }
+  }
+
+  drawHover(field) {
+    const ctx = document.getElementById('map').getContext('2d');
+    const xCenter = field._x;
+    const yCenter = field._y;
+    
+    ctx.beginPath();
+    ctx.moveTo(xCenter - 12.5, yCenter - 20);
+    ctx.lineTo(xCenter - 25, yCenter - 0);
+    ctx.lineTo(xCenter - 12.5, yCenter + 20);
+    ctx.lineTo(xCenter + 12.5, yCenter + 20);
+    ctx.lineTo(xCenter + 25, yCenter + 0);
+    ctx.lineTo(xCenter + 12.5, yCenter - 20);
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.closePath();
+  }
 }
 
 export { MapRender }

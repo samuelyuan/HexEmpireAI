@@ -30,31 +30,39 @@ $(function(){
 
   var startBattleButton = document.getElementById('startBattleButton');
   startBattleButton.disabled = true; // Disable until map is loaded
+  
   startBattleButton.onclick = function() {
-    if (game.isVictory()) {
-      // Reset map
-      game.generateNewMap(game.mapNumber);
-    }
-
-    mapNumberInput.value = game.mapNumber;
-    mapNumberInput.disabled = true;
-    changeMapButton.disabled = true;
-    randomMapButton.disabled = true;
-    startBattleButton.disabled = true;
-
-    const maxTurnLimit = 150;
-    var intervalId = setInterval(function(){
-      game.runTurn();
-
-      if (game.isVictory() || game.turns >= maxTurnLimit) {
-        mapNumberInput.disabled = false;
-        changeMapButton.disabled = false;
-        randomMapButton.disabled = false;
-        startBattleButton.disabled = false;
-
-        clearInterval(intervalId);
-      }
-    }, 1000);
+    $('#countrySelectModal').modal('show');
   };
+
+  $('.country-select').click(function() {
+    var country = $(this).data('country');
+    $('#countrySelectModal').modal('hide');
+    
+    let start = () => {
+       mapNumberInput.value = game.mapNumber;
+       mapNumberInput.disabled = true;
+       changeMapButton.disabled = true;
+       randomMapButton.disabled = true;
+       startBattleButton.disabled = true;
+
+       game.setHumanPlayer(parseInt(country));
+       game.startBattle();
+    };
+
+    if (game.isVictory()) {
+       game.generateNewMap(game.mapNumber).then(start);
+    } else {
+       start();
+    }
+  });
+
+  var canvas = document.getElementById('map');
+  canvas.addEventListener('mousedown', function(e) {
+      game.handleInput(e);
+  });
+  canvas.addEventListener('mousemove', function(e) {
+      game.handleMouseMove(e);
+  });
 
 });

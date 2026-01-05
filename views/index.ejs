@@ -30,6 +30,7 @@
           <button type="button" class="btn btn-primary" id="changeMapButton">Change Map</button>
           <button type="button" class="btn btn-primary" id="randomMapButton">Random Map</button>
           <button type="button" class="btn btn-success" id="startBattleButton">Start Battle</button>
+          <button type="button" class="btn btn-warning" id="endTurnButton" style="display:none;">End Turn</button>
         </form>
 
       </div>
@@ -38,6 +39,26 @@
         <canvas id="map" width="800" height="600"></canvas>
       </div>
       <div class="col-sm-12">
+        <!-- Country Selection Modal -->
+        <div class="modal fade" id="countrySelectModal" tabindex="-1" role="dialog" aria-labelledby="countrySelectModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="countrySelectModalLabel">Choose Your Country</h5>
+              </div>
+              <div class="modal-body">
+                <p>Select a country to lead to victory:</p>
+                <div class="d-flex justify-content-around">
+                  <button type="button" class="btn btn-danger country-select" data-country="0">Redosia</button>
+                  <button type="button" class="btn btn-secondary country-select" style="background-color: violet; border-color: violet;" data-country="1">Violetnam</button>
+                  <button type="button" class="btn btn-primary country-select" data-country="2">Bluegaria</button>
+                  <button type="button" class="btn btn-success country-select" data-country="3">Greenland</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div id="accordion">
           <div class="card">
             <div class="card-header" id="headingGameLog">
