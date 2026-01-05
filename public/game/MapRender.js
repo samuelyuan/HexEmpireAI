@@ -5,7 +5,18 @@ class MapRender {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(board.background_2, 0, 0);
+
+    // Draw Shoreline Glow/Shadow around Water
+    ctx.shadowColor = "rgba(210, 180, 140, 1)"; // Sand color
+    ctx.shadowBlur = 40; 
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    
     ctx.drawImage(board.background_sea, 0, 0);
+    
+    // Reset Shadow
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
 
     const partyColorStrings = [
       "rgba(255, 0, 0, 0.5)",
@@ -41,28 +52,32 @@ class MapRender {
         if (field.estate === "town") {
           // Capital city should use a different image
           const cityImg = field.capital >= 0 ? images["capital" + field.capital].img : images.city.img;
-          const width = cityImg.width;
-          const height = cityImg.height;
+          // Enforce fixed size for high-res assets
+          const width = 32;
+          const height = 32;
+          
           if (!field.army) {
-            ctx.drawImage(cityImg, xCenter - (width / 2), yCenter - (height / 2));
+            ctx.drawImage(cityImg, xCenter - (width / 2), yCenter - (height / 2), width, height);
           } else {
             ctx.save();
+            // Adjust translation for the fixed size
             ctx.translate(xCenter - (width / 2) + 17, yCenter - (height / 2) - 5);
             ctx.scale(0.9, 0.9);
-            ctx.drawImage(cityImg, 0, 0);
+            ctx.drawImage(cityImg, 0, 0, width, height);
             ctx.restore();
           }
         } else if (field.estate === "port") {
           const portImg = images.port.img;
-          const width = portImg.width;
-          const height = portImg.height;
+          const width = 32;
+          const height = 32;
+          
           if (!field.army) {
-            ctx.drawImage(portImg, xCenter - (width / 2), yCenter - (height / 2));
+            ctx.drawImage(portImg, xCenter - (width / 2), yCenter - (height / 2), width, height);
           } else {
             ctx.save();
             ctx.translate(xCenter - (width / 2) + 25, yCenter - (height / 2) - 5)
             ctx.scale(0.5, 0.5);
-            ctx.drawImage(portImg, 0, 0);
+            ctx.drawImage(portImg, 0, 0, width, height);
             ctx.restore();
           }
         }

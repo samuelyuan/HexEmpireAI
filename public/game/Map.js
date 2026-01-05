@@ -234,16 +234,16 @@ class Map {
 
     const ctx = board.background_2.getContext('2d');
     const img = townBgGrassImg;
-    const width = img.width;
-    const height = img.height;
+    const width = 100; 
+    const height = 100;
     const field = this.getField(x, y, board);
     const destX = field._x - (width / 2);
     const destY = field._y - (height / 2);
 
     ctx.translate(destX, destY);
-    this.rotateImageMatrix(ctx, img, rotateDegrees);
-    this.flipImageMatrix(ctx, img, flipH, flipV);
-    ctx.drawImage(img, 0, 0);
+    this.rotateImageMatrix(ctx, img, rotateDegrees, width, height);
+    this.flipImageMatrix(ctx, img, flipH, flipV, width, height);
+    ctx.drawImage(img, 0, 0, width, height);
     ctx.resetTransform();
 
     let region = new Path2D();
@@ -270,9 +270,9 @@ class Map {
     }
   }
 
-  flipImageMatrix(ctx, image, flipH, flipV) {
-    const width = image.width;
-    const height = image.height;
+  flipImageMatrix(ctx, image, flipH, flipV, width, height) {
+    if (!width) width = image.width;
+    if (!height) height = image.height;
 
     if (flipH > 0 && flipV > 0) {
       ctx.translate(width, height);
@@ -290,9 +290,9 @@ class Map {
 	   return (Math.PI / 180) * degrees;
   }
 
-  rotateImageMatrix(ctx, image, rotateDegrees) {
-    const width = image.width;
-    const height = image.height;
+  rotateImageMatrix(ctx, image, rotateDegrees, width, height) {
+    if (!width) width = image.width;
+    if (!height) height = image.height;
 
     ctx.translate(width / 2, height / 2);
     ctx.rotate(this.degreesToRadians(rotateDegrees));
@@ -307,8 +307,9 @@ class Map {
     board.background_2.width = 800;
     board.background_2.height = 600;
 
-    var gridImages = new Array(6 * 4);
-    for (var x = 0; x < 6; x++) {
+    // Increased grid size to prevent right-edge clipping (6->7 columns)
+    var gridImages = new Array(7 * 4);
+    for (var x = 0; x < 7; x++) {
       for (var y = 0; y < 4; y++) {
         const index = (x * 4) + y;
         gridImages[index] = {
@@ -334,10 +335,10 @@ class Map {
         var destY = (y * 125) - 15;
 
         ctx.translate(destX, destY);
-        this.rotateImageMatrix(ctx, img, rotateDegrees);
-        this.flipImageMatrix(ctx, img, flipH, flipV);
+        this.rotateImageMatrix(ctx, img, rotateDegrees, 155, 155);
+        this.flipImageMatrix(ctx, img, flipH, flipV, 155, 155);
 
-        ctx.drawImage(img, 0, 0);
+        ctx.drawImage(img, 0, 0, 155, 155);
         ctx.resetTransform();
 
         let region = new Path2D();
@@ -601,14 +602,14 @@ class Map {
           const ctx = board.background_sea.getContext('2d');
 
           const img = seaBg;
-          const width = seaBg.width;
-          const height = seaBg.height;
+          const width = 61;
+          const height = 56;
           const destX = field._x - (width / 2.0);
           const destY = field._y - (height / 2.0);
           ctx.translate(destX, destY);
-          this.rotateImageMatrix(ctx, img, rotateDegrees);
-          this.flipImageMatrix(ctx, img, flipH, flipV);
-          ctx.drawImage(img, 0, 0);
+          this.rotateImageMatrix(ctx, img, rotateDegrees, width, height);
+          this.flipImageMatrix(ctx, img, flipH, flipV, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
           ctx.resetTransform();
         }
       }
