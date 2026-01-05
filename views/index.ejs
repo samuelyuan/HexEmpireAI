@@ -2,79 +2,89 @@
 <html lang="en">
 <head>
   <title>HexEmpireAI</title>
-  <!-- Required meta tags -->
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <!-- Bootstrap CSS -->
-  <link rel="stylesheet" href="/css/bootstrap.min.css" type="text/css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- Material Icon Font -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- Materialize CSS -->
+  <link rel="stylesheet" href="/css/materialize.min.css" media="screen,projection">
   <script src="/js/jquery-3.5.1.min.js"></script>
-  <script src="/js/bootstrap.min.js"></script>
+  <script src="/js/materialize.min.js"></script>
   <style>
     .gamelog {
       overflow-y: scroll;
-      width: 800px;
-      height: 600px;
+      width: 100%;
+      height: 300px;
+      padding: 10px;
+    }
+    canvas {
+        max-width: 100%;
+        height: auto;
+    }
+    .modal {
+        max-width: 600px;
     }
   </style>
 </head>
 
 <body>
+  <nav class="light-blue lighten-1" role="navigation">
+    <div class="nav-wrapper container">
+      <a id="logo-container" href="#" class="brand-logo">HexEmpireAI</a>
+    </div>
+  </nav>
+
   <div class="container">
-    <div class="row">
-      <div class="col-sm-12">
-        <form class="form-inline">
-          <div class="form-group">
-            <label for="mapNumber" class="sr-only">Map #</label>
-            <input type="text" class="form-control-plaintext" id="mapNumberInput" placeholder="Enter map number, ex. 999999">
-          </div>
-          <button type="button" class="btn btn-primary" id="changeMapButton">Change Map</button>
-          <button type="button" class="btn btn-primary" id="randomMapButton">Random Map</button>
-          <button type="button" class="btn btn-success" id="startBattleButton">Start Battle</button>
-          <button type="button" class="btn btn-warning" id="endTurnButton" style="display:none;">End Turn</button>
-        </form>
-
-      </div>
-      <div class="col-sm-12">
-        <div id="mapStatus"><b>Map</b> , <b>Turn</b> 1</div>
-        <canvas id="map" width="800" height="600"></canvas>
-      </div>
-      <div class="col-sm-12">
-        <!-- Country Selection Modal -->
-        <div class="modal fade" id="countrySelectModal" tabindex="-1" role="dialog" aria-labelledby="countrySelectModalLabel" aria-hidden="true">
-          <div class="modal-dialog" role="document">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title" id="countrySelectModalLabel">Choose Your Country</h5>
-              </div>
-              <div class="modal-body">
-                <p>Select a country to lead to victory:</p>
-                <div class="d-flex justify-content-around">
-                  <button type="button" class="btn btn-danger country-select" data-country="0">Redosia</button>
-                  <button type="button" class="btn btn-secondary country-select" style="background-color: violet; border-color: violet;" data-country="1">Violetnam</button>
-                  <button type="button" class="btn btn-primary country-select" data-country="2">Bluegaria</button>
-                  <button type="button" class="btn btn-success country-select" data-country="3">Greenland</button>
-                </div>
-              </div>
-            </div>
+    <div class="section">
+      <div class="row">
+        <div class="col s12">
+          <div class="row">
+             <div class="input-field col s12 m4">
+                <input id="mapNumberInput" type="text" placeholder="Enter map number">
+                <label for="mapNumberInput">Map #</label>
+             </div>
+             <div class="col s12 m8 valign-wrapper" style="height: 80px;">
+                <button type="button" class="waves-effect waves-light btn blue" id="changeMapButton">Change Map</button>
+                <button type="button" class="waves-effect waves-light btn blue" id="randomMapButton" style="margin-left: 10px;">Random</button>
+                <button type="button" class="waves-effect waves-light btn green" id="startBattleButton" style="margin-left: 10px;">Start Battle</button>
+                <button type="button" class="waves-effect waves-light btn orange" id="endTurnButton" style="display:none; margin-left: 10px;">End Turn</button>
+             </div>
           </div>
         </div>
+      </div>
 
-        <div id="accordion">
-          <div class="card">
-            <div class="card-header" id="headingGameLog">
-              <h2 class="mb-0">
-                <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseGameLog" aria-expanded="false">
-                  Game Log
-                </button>
-              </h2>
-            </div>
-            <div id="collapseGameLog" class="collapse" aria-labelledby="headingGameLog" data-parent="#accordion">
-              <div class="card-body">
-                <div id="gamelog"></div>
-              </div>
-            </div>
-          </div>
+      <div class="row">
+        <div class="col s12">
+           <h5 id="mapStatus">Map, Turn 1</h5>
+           <div class="card-panel center-align">
+              <canvas id="map" width="800" height="600"></canvas>
+           </div>
         </div>
+      </div>
+
+      <div class="row">
+        <div class="col s12">
+          <ul class="collapsible">
+            <li>
+              <div class="collapsible-header"><i class="material-icons">list</i>Game Log</div>
+              <div class="collapsible-body"><div id="gamelog" class="gamelog"></div></div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Country Selection Modal -->
+  <div id="countrySelectModal" class="modal">
+    <div class="modal-content">
+      <h4>Choose Your Country</h4>
+      <p>Select a country to lead to victory:</p>
+      <div class="row center-align">
+         <button class="waves-effect waves-light btn red country-select" data-country="0">Redosia</button>
+         <button class="waves-effect waves-light btn purple country-select" data-country="1">Violetnam</button>
+         <button class="waves-effect waves-light btn blue country-select" data-country="2">Bluegaria</button>
+         <button class="waves-effect waves-light btn green country-select" data-country="3">Greenland</button>
       </div>
     </div>
   </div>

@@ -1,6 +1,9 @@
 import { Game } from './Game.js'
 
 $(function(){
+  // Initialize Materialize
+  M.AutoInit();
+
   const game = new Game();
   game.generateRandomMap();
 
@@ -32,12 +35,16 @@ $(function(){
   startBattleButton.disabled = true; // Disable until map is loaded
   
   startBattleButton.onclick = function() {
-    $('#countrySelectModal').modal('show');
+    var elem = document.getElementById('countrySelectModal');
+    var instance = M.Modal.getInstance(elem);
+    instance.open();
   };
 
   $('.country-select').click(function() {
     var country = $(this).data('country');
-    $('#countrySelectModal').modal('hide');
+    var elem = document.getElementById('countrySelectModal');
+    var instance = M.Modal.getInstance(elem);
+    instance.close();
     
     let start = () => {
        mapNumberInput.value = game.mapNumber;
