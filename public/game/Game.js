@@ -175,11 +175,28 @@ class Game {
       this.humanMovesLeft = this.map.getMovePoints(this.board.turn_party, this.board);
       this.updateMapStatus();
       
+      if (this.humanMovesLeft <= 0 || !this.checkHumanCanMove()) {
+        this.endHumanTurn();
+        return;
+      }
+
       document.getElementById('endTurnButton').style.display = 'inline-block';
       document.getElementById('endTurnButton').onclick = () => {
          this.endHumanTurn();
       };
     }
+  }
+
+  checkHumanCanMove() {
+    const movableArmies = this.map.bot.getMovableArmies(this.board.human, this.board);
+    for (let i = 0; i < movableArmies.length; i++) {
+      const army = movableArmies[i];
+      const possibleMoves = this.map.pathfinder.getPossibleMoves(army.field, true, false);
+      if (possibleMoves.length > 0) {
+        return true;
+      }
+    }
+    return false;
   }
 
   endHumanTurn() {
@@ -251,7 +268,7 @@ class Game {
           this.map.updateArmies(this.board);
           this.drawGame();
           
-          if (this.humanMovesLeft <= 0) {
+          if (this.humanMovesLeft <= 0 || !this.checkHumanCanMove()) {
              this.endHumanTurn();
           }
           return;
