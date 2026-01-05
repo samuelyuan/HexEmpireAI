@@ -287,11 +287,10 @@ class Game {
 
   getMousePos(canvas, event) {
     var rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    // Map to logical size (760x480) ignoring DPI physical size
     return {
-      x: (event.clientX - rect.left) * scaleX,
-      y: (event.clientY - rect.top) * scaleY
+      x: (event.clientX - rect.left) * (760 / rect.width),
+      y: (event.clientY - rect.top) * (480 / rect.height)
     };
   }
 

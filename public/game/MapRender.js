@@ -46,10 +46,11 @@ class MapRender {
           if (!field.army) {
             ctx.drawImage(cityImg, xCenter - (width / 2), yCenter - (height / 2));
           } else {
+            ctx.save();
             ctx.translate(xCenter - (width / 2) + 17, yCenter - (height / 2) - 5);
             ctx.scale(0.9, 0.9);
             ctx.drawImage(cityImg, 0, 0);
-            ctx.resetTransform();
+            ctx.restore();
           }
         } else if (field.estate === "port") {
           const portImg = images.port.img;
@@ -58,19 +59,26 @@ class MapRender {
           if (!field.army) {
             ctx.drawImage(portImg, xCenter - (width / 2), yCenter - (height / 2));
           } else {
+            ctx.save();
             ctx.translate(xCenter - (width / 2) + 25, yCenter - (height / 2) - 5)
             ctx.scale(0.5, 0.5);
             ctx.drawImage(portImg, 0, 0);
-            ctx.resetTransform();
+            ctx.restore();
           }
         }
-
-        this.drawArmy(ctx, field, xCenter, yCenter);
       }
     }
 
     this.drawTerritoryBorders(ctx, board);
     this.drawTownNames(ctx, board);
+
+    // Draw armies last to be on top of everything
+    for (var x = 0; x < board.hw_xmax; x++) {
+      for (var y = 0; y < board.hw_ymax; y++) {
+        const field = board.field["f" + x + "x" + y];
+        this.drawArmy(ctx, field, field._x, field._y);
+      }
+    }
   }
 
   drawTerritoryBorders(ctx, board) {
@@ -124,13 +132,28 @@ class MapRender {
     if (field.army) {
       const fillColor = field.army.moved ? "#bbbbbb" : "#ffffff";
       this.drawCircle(ctx, xCenter, yCenter, 15, fillColor, field.army.party >= 0 ? armyColor[field.army.party] : "#000000");
-      ctx.fillStyle = 'black';
-      ctx.font = '12px serif';
-      ctx.fillText(field.army.count + "/" + field.army.morale, xCenter - 12, yCenter + 2.5);
+      
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = 'bold 11px "Roboto Condensed", sans-serif';
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'black';
+      ctx.strokeText(field.army.count + "/" + field.army.morale, xCenter, yCenter);
+      ctx.fillStyle = 'white';
+      ctx.fillText(field.army.count + "/" + field.army.morale, xCenter, yCenter);
+      
+      // Reset defaults
+      ctx.textAlign = 'start';
+      ctx.textBaseline = 'alphabetic';
     }
   }
 
   drawTownNames(ctx, board) {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.font = 'bold 12px "Roboto Condensed", sans-serif';
+    ctx.lineWidth = 3;
+
     for (var x = 0; x < board.hw_xmax; x++) {
       for (var y = 0; y < board.hw_ymax; y++) {
         const field = board.field["f" + x + "x" + y];
@@ -139,12 +162,26 @@ class MapRender {
 
         // Draw towns and ports
         if (field.estate === "town" || field.estate === "port") {
+          let yPos = yCenter - 17;
+          
+          // Check for top cropping (if too close to top edge)
+          if (yPos < 15) {
+             ctx.textBaseline = 'top';
+             yPos = yCenter + 20; // Draw below the city
+          } else {
+             ctx.textBaseline = 'bottom';
+          }
+
+          ctx.strokeStyle = 'black';
+          ctx.strokeText(field.town_name, xCenter, yPos);
           ctx.fillStyle = 'white';
-          ctx.font = '12px serif';
-          ctx.fillText(field.town_name, xCenter - (10 + field.town_name.length), yCenter - 17);
+          ctx.fillText(field.town_name, xCenter, yPos);
         }
       }
     }
+    // Reset defaults
+    ctx.textAlign = 'start';
+    ctx.textBaseline = 'alphabetic';
   }
 
   drawHexOutline(ctx, xCenter, yCenter, borderColor, borderWidth) {

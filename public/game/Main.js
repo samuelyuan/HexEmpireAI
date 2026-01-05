@@ -4,6 +4,33 @@ $(function(){
   // Initialize Materialize
   M.AutoInit();
 
+  const canvas = document.getElementById('map');
+  const dpr = window.devicePixelRatio || 1;
+  
+  // Logical game size (tighter fit to remove black bars)
+  const logicalWidth = 760;
+  const logicalHeight = 480;
+
+  // Function to handle High DPI scaling and responsiveness
+  function resizeCanvas() {
+    const displayWidth = canvas.clientWidth;
+    const displayHeight = displayWidth * (logicalHeight / logicalWidth);
+    
+    canvas.width = displayWidth * dpr;
+    canvas.height = displayHeight * dpr;
+    
+    const scale = (displayWidth * dpr) / logicalWidth;
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  }
+
+  // Ensure CSS allows responsive scaling
+  canvas.style.width = '100%';
+  canvas.style.height = 'auto';
+  
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
   const game = new Game();
   game.generateRandomMap();
 
@@ -73,7 +100,11 @@ $(function(){
     }
   });
 
-  var canvas = document.getElementById('map');
+  // Re-draw on resize to prevent blank screen
+  window.addEventListener('resize', () => {
+      game.drawGame();
+  });
+
   canvas.addEventListener('mousedown', function(e) {
       game.handleInput(e);
   });
