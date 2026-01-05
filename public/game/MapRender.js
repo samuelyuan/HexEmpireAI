@@ -19,11 +19,30 @@ class MapRender {
     ctx.shadowBlur = 0;
 
 
+    const partyColorsRGB = [
+      "255, 0, 0",
+      "255, 0, 255",
+      "0, 187, 255",
+      "0, 255, 0"
+    ];
+
     for (var x = 0; x < board.hw_xmax; x++) {
       for (var y = 0; y < board.hw_ymax; y++) {
         const field = board.field["f" + x + "x" + y];
         const xCenter = field._x;
         const yCenter = field._y;
+
+        // Draw Tint for Territory
+        if (field.party != -1) {
+            let rgb = partyColorsRGB[field.party] || "0,0,0";
+            let alpha = 0.01; // Very faint for enemies
+            
+            if (field.party == board.human) {
+                alpha = 0.25; // Distinct for human
+            }
+            
+            this.drawHexTile(ctx, xCenter, yCenter, `rgba(${rgb}, ${alpha})`);
+        }
 
         // Draw Grid (Base)
         this.drawHexOutline(ctx, xCenter, yCenter, "rgba(0,0,0,0.2)", 0.5);
