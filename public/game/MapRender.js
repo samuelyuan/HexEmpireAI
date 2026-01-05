@@ -68,7 +68,8 @@ class MapRender {
   drawArmy(ctx, field, xCenter, yCenter) {
     const armyColor = ["#ff0000", "#ff00ff", "#00bbff", "#00ff00"];
     if (field.army) {
-      this.drawCircle(ctx, xCenter, yCenter, 15, "#ffffff", field.army.party >= 0 ? armyColor[field.army.party] : "#000000");
+      const fillColor = field.army.moved ? "#bbbbbb" : "#ffffff";
+      this.drawCircle(ctx, xCenter, yCenter, 15, fillColor, field.army.party >= 0 ? armyColor[field.army.party] : "#000000");
       ctx.fillStyle = 'black';
       ctx.font = '12px serif';
       ctx.fillText(field.army.count + "/" + field.army.morale, xCenter - 12, yCenter + 2.5);
