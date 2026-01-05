@@ -18,12 +18,6 @@ class MapRender {
     ctx.shadowColor = "transparent";
     ctx.shadowBlur = 0;
 
-    const partyColorStrings = [
-      "rgba(255, 0, 0, 0.5)",
-      "rgba(255, 0, 255, 0.5)",
-      "rgba(0, 187, 255, 0.5)",
-      "rgba(0, 255, 0, 0.5)"
-    ];
 
     for (var x = 0; x < board.hw_xmax; x++) {
       for (var y = 0; y < board.hw_ymax; y++) {
@@ -31,20 +25,6 @@ class MapRender {
         const xCenter = field._x;
         const yCenter = field._y;
 
-        // Draw which party controls the tile
-        if (field.party != -1) {
-          if (field.party >= 0 && field.party < 4) {
-            let color = partyColorStrings[field.party];
-            // Highlight human player faction
-            if (field.party == board.human) {
-               color = color.replace("0.5)", "0.75)");
-            }
-            this.drawHexTile(ctx, xCenter, yCenter, color);
-          } else {
-            this.drawHexTile(ctx, xCenter, yCenter, "rgba(0, 0, 0, 0.5)");
-          }
-        }
-        
         // Draw Grid (Base)
         this.drawHexOutline(ctx, xCenter, yCenter, "rgba(0,0,0,0.2)", 0.5);
 
@@ -98,30 +78,39 @@ class MapRender {
 
   drawTerritoryBorders(ctx, board) {
     const edgeMap = [3, 2, 1, 0, 5, 4];
+    const partyColorsRGB = [
+        "255, 0, 0",      // Red
+        "255, 0, 255",    // Magenta
+        "0, 187, 255",    // Cyan
+        "0, 255, 0"       // Green
+    ];
     
     for (var x = 0; x < board.hw_xmax; x++) {
       for (var y = 0; y < board.hw_ymax; y++) {
         const field = board.field["f" + x + "x" + y];
         if (field.party == -1) continue; 
 
-        let borderColor = "rgba(0,0,0,0.8)";
-        let borderWidth = 1;
-        if (field.party == board.human) {
-            borderColor = "#FFD700";
-            borderWidth = 3;
-        }
-
         const xCenter = field._x;
         const yCenter = field._y;
         
         const V = [
             {x: xCenter - 12.5, y: yCenter - 20}, // V0 TopLeft
-            {x: xCenter - 25,   y: yCenter - 0},  // V1 MidLeft (fixed width 25)
+            {x: xCenter - 25,   y: yCenter - 0},  // V1 MidLeft
             {x: xCenter - 12.5, y: yCenter + 20}, // V2 BotLeft
             {x: xCenter + 12.5, y: yCenter + 20}, // V3 BotRight
             {x: xCenter + 25,   y: yCenter + 0},  // V4 MidRight
             {x: xCenter + 12.5, y: yCenter - 20}  // V5 TopRight
         ];
+
+        let rgb = partyColorsRGB[field.party] || "0,0,0";
+        let alphaStart = 0.6;
+        let alphaLine = 0.8;
+        
+        // Highlight human player faction
+        if (field.party == board.human) {
+            alphaStart = 0.8; 
+            alphaLine = 1.0; 
+        }
 
         for (let i = 0; i < 6; i++) {
             const neighbor = field.neighbours[i];
@@ -130,11 +119,29 @@ class MapRender {
                 const vStart = V[edgeIndex];
                 const vEnd = V[(edgeIndex + 1) % 6];
                 
+                // Gradient Fill (Inward Glow)
+                const midX = (vStart.x + vEnd.x) / 2;
+                const midY = (vStart.y + vEnd.y) / 2;
+                
+                const grd = ctx.createLinearGradient(midX, midY, xCenter, yCenter);
+                grd.addColorStop(0, `rgba(${rgb}, ${alphaStart})`);
+                grd.addColorStop(0.5, `rgba(${rgb}, 0)`); // Fade out halfway
+                
+                ctx.fillStyle = grd;
+                ctx.beginPath();
+                ctx.moveTo(xCenter, yCenter);
+                ctx.lineTo(vStart.x, vStart.y);
+                ctx.lineTo(vEnd.x, vEnd.y);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Crisp Line on Edge
                 ctx.beginPath();
                 ctx.moveTo(vStart.x, vStart.y);
                 ctx.lineTo(vEnd.x, vEnd.y);
-                ctx.strokeStyle = borderColor;
-                ctx.lineWidth = borderWidth;
+                ctx.strokeStyle = `rgba(${rgb}, ${alphaLine})`;
+                ctx.lineWidth = 1; 
+                ctx.lineCap = "round";
                 ctx.stroke();
             }
         }
@@ -209,10 +216,10 @@ class MapRender {
     ctx.lineTo(xCenter + 12.5, yCenter + 20);
     ctx.lineTo(xCenter + 24, yCenter + 0);
     ctx.lineTo(xCenter + 12.5, yCenter - 20);
+    ctx.closePath();
     ctx.strokeStyle = borderColor || "rgba(255, 255, 102, 0.3)";
     ctx.lineWidth = borderWidth || 0.5;
     ctx.stroke();
-    ctx.closePath();
   }
 
   drawHexTile(ctx, xCenter, yCenter, color) {
@@ -295,10 +302,10 @@ class MapRender {
     ctx.lineTo(xCenter + 12.5, yCenter + 20);
     ctx.lineTo(xCenter + 25, yCenter + 0);
     ctx.lineTo(xCenter + 12.5, yCenter - 20);
+    ctx.closePath();
     ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
     ctx.lineWidth = 2;
     ctx.stroke();
-    ctx.closePath();
   }
 }
 
