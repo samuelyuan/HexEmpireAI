@@ -244,10 +244,10 @@ class Map {
     this.rotateImageMatrix(ctx, img, rotateDegrees, width, height);
     this.flipImageMatrix(ctx, img, flipH, flipV, width, height);
     ctx.drawImage(img, 0, 0, width, height);
-    ctx.resetTransform();
+    ctx.setTransform(2, 0, 0, 2, 0, 0);
 
     let region = new Path2D();
-    region.rect(0, 0, 750, 465);
+    region.rect(0, 0, board.pixelWidth, board.pixelHeight);
     ctx.clip(region);
   }
 
@@ -301,11 +301,20 @@ class Map {
 
   createBackground(board) {
     board.background_1 = document.createElement('canvas');
-    board.background_1.width = 800;
-    board.background_1.height = 600;
+    board.background_1.width = board.pixelWidth * 2;
+    board.background_1.height = board.pixelHeight * 2;
     board.background_2 = document.createElement('canvas');
-    board.background_2.width = 800;
-    board.background_2.height = 600;
+    board.background_2.width = board.pixelWidth * 2;
+    board.background_2.height = board.pixelHeight * 2;
+
+    const ctx = board.background_2.getContext('2d');
+    ctx.setTransform(2, 0, 0, 2, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    
+    // Fill background with a base terrain color to hide potential gaps between tiles
+    ctx.fillStyle = "#4b5e28"; 
+    ctx.fillRect(0, 0, board.pixelWidth, board.pixelHeight);
 
     // Increased grid size to prevent right-edge clipping (6->7 columns)
     var gridImages = new Array(7 * 4);
@@ -329,7 +338,6 @@ class Map {
         const flipV = this.rand(2);
         const rotateDegrees = this.rand(4) * 90;
 
-        const ctx = board.background_2.getContext('2d');
         var img = gridImages[index].grassBg;
         var destX = (x * 125) - 15;
         var destY = (y * 125) - 15;
@@ -339,10 +347,10 @@ class Map {
         this.flipImageMatrix(ctx, img, flipH, flipV, 155, 155);
 
         ctx.drawImage(img, 0, 0, 155, 155);
-        ctx.resetTransform();
+        ctx.setTransform(2, 0, 0, 2, 0, 0);
 
         let region = new Path2D();
-        region.rect(0, 0, 800, 465);
+        region.rect(0, 0, board.pixelWidth, board.pixelHeight);
         ctx.clip(region);
       }
     }
@@ -397,8 +405,10 @@ class Map {
       }
     }
     board.background_sea = document.createElement('canvas');
-    board.background_sea.width = 800;
-    board.background_sea.height = 600;
+    board.background_sea.width = board.pixelWidth * 2;
+    board.background_sea.height = board.pixelHeight * 2;
+    const ctx = board.background_sea.getContext('2d');
+    ctx.setTransform(2, 0, 0, 2, 0, 0);
 
     for (var x = 0; x < board.hw_xmax; x++) {
       for (var y = 0; y < board.hw_ymax; y++) {
@@ -610,7 +620,7 @@ class Map {
           this.rotateImageMatrix(ctx, img, rotateDegrees, width, height);
           this.flipImageMatrix(ctx, img, flipH, flipV, width, height);
           ctx.drawImage(img, 0, 0, width, height);
-          ctx.resetTransform();
+          ctx.setTransform(2, 0, 0, 2, 0, 0);
         }
       }
     }

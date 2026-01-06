@@ -28,12 +28,24 @@ class Game {
   }
 
   generateNewBoard() {
+    const hw_xmax = 20;
+    const hw_ymax = 11;
+    const hw_fw = 50;
+    const hw_fh = 40;
+    
+    // Width: (cols-1) * 3/4 width + full width
+    const pixelWidth = Math.ceil((hw_xmax - 1) * (hw_fw * 0.75) + hw_fw);
+    // Height: (rows-1) * height + height + half_height (for offset rows)
+    const pixelHeight = (hw_ymax - 1) * hw_fh + hw_fh + (hw_fh / 2);
+
     return {
       hw_init: false, // false when game starts
-      hw_xmax: 20,
-      hw_ymax: 11,
-      hw_fw: 50,
-      hw_fh: 40,
+      hw_xmax: hw_xmax,
+      hw_ymax: hw_ymax,
+      hw_fw: hw_fw,
+      hw_fh: hw_fh,
+      pixelWidth: pixelWidth,
+      pixelHeight: pixelHeight,
       hw_land: 0,
       hw_top_field_depth: 0,
       hw_lands: [],
@@ -90,6 +102,12 @@ class Game {
     this.mapNumber = mapNumber;
 
     this.board = this.generateNewBoard();
+
+    // Resize canvas to fit map exactly
+    const canvas = document.getElementById('map');
+    canvas.width = this.board.pixelWidth * 2;
+    canvas.height = this.board.pixelHeight * 2;
+
     this.map = new Map(this.mapNumber, this.images);
 
     var imagesToLoad = [];
@@ -103,7 +121,12 @@ class Game {
       .then(function(){
         self.map.generateMap(self.board, self.mapNumber);
         const ctx = document.getElementById('map').getContext('2d');
-        ctx.drawImage(self.board.background_2, 0, 0);
+        // Initialize transform for the main canvas context
+        ctx.setTransform(2, 0, 0, 2, 0, 0);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        
+        ctx.drawImage(self.board.background_2, 0, 0, self.board.pixelWidth, self.board.pixelHeight);
         self.map.updateBoard(self.board);
         self.map.calcAIHelpers(self.board);
         self.initGame();
@@ -304,10 +327,10 @@ class Game {
 
   getMousePos(canvas, event) {
     var rect = canvas.getBoundingClientRect();
-    // Map to logical size (760x480) ignoring DPI physical size
+    // Map to logical size matching drawing coordinates
     return {
-      x: (event.clientX - rect.left) * (760 / rect.width),
-      y: (event.clientY - rect.top) * (480 / rect.height)
+      x: (event.clientX - rect.left) * (this.board.pixelWidth / rect.width),
+      y: (event.clientY - rect.top) * (this.board.pixelHeight / rect.height)
     };
   }
 

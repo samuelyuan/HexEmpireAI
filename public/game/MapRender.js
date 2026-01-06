@@ -3,8 +3,16 @@ class MapRender {
     const canvas = document.getElementById('map');
     const ctx = document.getElementById('map').getContext('2d');
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(board.background_2, 0, 0);
+    // Scale context for HiDPI
+    ctx.setTransform(2, 0, 0, 2, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    // Clear using logical coordinates
+    ctx.clearRect(0, 0, board.pixelWidth, board.pixelHeight);
+    
+    // Draw background using logical size
+    ctx.drawImage(board.background_2, 0, 0, board.pixelWidth, board.pixelHeight);
 
     // Draw Shoreline Glow/Shadow around Water
     ctx.shadowColor = "rgba(210, 180, 140, 1)"; // Sand color
@@ -12,7 +20,7 @@ class MapRender {
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 0;
     
-    ctx.drawImage(board.background_sea, 0, 0);
+    ctx.drawImage(board.background_sea, 0, 0, board.pixelWidth, board.pixelHeight);
     
     // Reset Shadow
     ctx.shadowColor = "transparent";
