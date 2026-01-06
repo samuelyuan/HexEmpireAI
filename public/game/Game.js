@@ -24,6 +24,10 @@ class Game {
     images["capital1"] = { img: null , path: 'images/capital_violet.png', status: 'none' };
     images["capital2"] = { img: null , path: 'images/capital_blue.png', status: 'none' };
     images["capital3"] = { img: null , path: 'images/capital_green.png', status: 'none' };
+    images["infantry"] = { img: null , path: 'images/infantry.png', status: 'none' };
+    images["artillery"] = { img: null , path: 'images/artillery.png', status: 'none' };
+    images["tank"] = { img: null , path: 'images/tank.png', status: 'none' };
+    images["warship"] = { img: null , path: 'images/warship.png', status: 'none' };
     return images;
   }
 
