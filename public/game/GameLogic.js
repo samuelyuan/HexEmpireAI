@@ -557,6 +557,7 @@ export class GameLogic {
              let morale = party.morale;
              if (party.capital.army) morale = party.capital.army.morale;
              this.joinUnits(5, morale, partyId, null, party.capital);
+             this.annexLand(partyId, party.capital, true);
          }
 
          // Towns spawn
@@ -564,6 +565,7 @@ export class GameLogic {
              let morale = party.morale;
              if (town.army) morale = town.army.morale;
              this.joinUnits(5 + ucount, morale, partyId, null, town);
+             this.annexLand(partyId, town, true);
          }
     }
 }

@@ -69,8 +69,15 @@ export class MapRender {
         const xCenter = field._x;
         const yCenter = field._y;
 
+        // Movable Unit Highlight (Yellow Hex)
+        let drawn = false;
+        if (field.army && !field.army.moved && field.army.party === state.humanPlayerId) {
+             this.drawHexTile(ctx, xCenter, yCenter, "rgba(255, 255, 0, 0.5)");
+             drawn = true;
+        }
+
         // Territory Tint
-        if (field.party !== -1) {
+        if (!drawn && field.party !== -1) {
             const rgb = Config.COLORS.PARTY_RGB[field.party] || "0,0,0";
             let alpha = 0.01;
             if (field.party === state.humanPlayerId) {
@@ -234,25 +241,6 @@ export class MapRender {
     sCtx.imageSmoothingQuality = 'high';
     sCtx.drawImage(unitImg, 0, 0, sWidth, sHeight);
     
-    const isMovable = !army.moved && (army.party === state.humanPlayerId);
-
-    if (isMovable) {
-        sCtx.globalCompositeOperation = 'source-atop'; 
-        sCtx.fillStyle = Config.COLORS.TINT_MOVABLE;
-        sCtx.fillRect(0, 0, sWidth, sHeight);
-    }
-    sCtx.globalCompositeOperation = 'source-over'; 
-
-    if (isMovable) {
-        ctx.save();
-        ctx.shadowColor = Config.COLORS.GLOW_MOVABLE;
-        ctx.shadowBlur = 20;
-        const OFFSET = 10000;
-        ctx.shadowOffsetX = OFFSET;
-        ctx.drawImage(this.scratchCanvas, 0, 0, sWidth, sHeight, xCenter - width/2 - OFFSET, yCenter - height/2, width, height);
-        ctx.restore();
-    }
-
     ctx.save();
     ctx.shadowColor = `rgba(${rgb}, 0.8)`;
     ctx.shadowBlur = 15;
