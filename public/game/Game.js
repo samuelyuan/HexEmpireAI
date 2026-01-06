@@ -1,91 +1,66 @@
-import { Map } from './Map.js'
-import { MapRender } from './MapRender.js'
+import { Config } from './Config.js';
+import { Utils, Random } from './Utils.js';
+import { GameState } from './GameState.js';
+import { MapRender } from './MapRender.js';
+import { MapGenerator } from './MapGenerator.js';
+import { GameLogic } from './GameLogic.js';
+import { Pathfinder } from './Pathfinder.js';
+import { Bot } from './Bot.js';
 
-class Game {
+export class Game {
   constructor() {
     this.mapRender = new MapRender();
+    this.pathfinder = new Pathfinder();
+    this.bot = new Bot(this.pathfinder);
     this.images = this.prepareImages();
+    this.state = null;
+    this.mapNumber = -1;
+    this.humanMovesLeft = 0;
+    this.selectedArmy = null;
+    this.hoveredField = null;
+    this.cursorPos = { x: 0, y: 0 };
   }
 
   prepareImages() {
-    var images = {};
-    for (var i = 1; i <= 6; i++) {
-      images["grassBg" + i] = { img: null , path: 'images/l_' + i + '.png', status: 'none' };
+    const images = {};
+    const cfg = Config.IMAGES;
+    
+    // Backgrounds
+    for (let i = 1; i <= cfg.GRASS_BG.count; i++) {
+      images["grassBg" + i] = { img: null, path: Utils.getImagePath(cfg.GRASS_BG.prefix + i + '.png'), status: 'none' };
     }
-    for (var i = 1; i <= 6; i++) {
-      images["seaBg" + i] = { img: null , path: 'images/m_' + i + '.png', status: 'none' };
+    for (let i = 1; i <= cfg.SEA_BG.count; i++) {
+      images["seaBg" + i] = { img: null, path: Utils.getImagePath(cfg.SEA_BG.prefix + i + '.png'), status: 'none' };
     }
-    for (var i = 1; i <= 6; i++) {
-      images["townBgGrass" + i] = { img: null , path: 'images/c_' + i + '.png', status: 'none' };
+    for (let i = 1; i <= cfg.TOWN_BG_GRASS.count; i++) {
+       // Note: original code used c_1..c_6. Config has prefix c_
+       images["townBgGrass" + i] = { img: null, path: Utils.getImagePath(cfg.TOWN_BG_GRASS.prefix + i + '.png'), status: 'none' };
     }
-    images["city"] = { img: null , path: 'images/city.png', status: 'none' };
-    images["port"] = { img: null , path: 'images/port.png', status: 'none' };
-    images["capital0"] = { img: null , path: 'images/capital_red.png', status: 'none' };
-    images["capital1"] = { img: null , path: 'images/capital_violet.png', status: 'none' };
-    images["capital2"] = { img: null , path: 'images/capital_blue.png', status: 'none' };
-    images["capital3"] = { img: null , path: 'images/capital_green.png', status: 'none' };
-    images["infantry"] = { img: null , path: 'images/infantry.png', status: 'none' };
-    images["artillery"] = { img: null , path: 'images/artillery.png', status: 'none' };
-    images["tank"] = { img: null , path: 'images/tank.png', status: 'none' };
-    images["warship"] = { img: null , path: 'images/warship.png', status: 'none' };
+    
+    // Estates
+    images["city"] = { img: null, path: Utils.getImagePath(cfg.CITY), status: 'none' };
+    images["port"] = { img: null, path: Utils.getImagePath(cfg.PORT), status: 'none' };
+    
+    // Capitals
+    cfg.CAPITALS.forEach((path, idx) => {
+        images["capital" + idx] = { img: null, path: Utils.getImagePath(path), status: 'none' };
+    });
+    
+    // Units
+    for (const [key, path] of Object.entries(cfg.UNITS)) {
+        images[key] = { img: null, path: Utils.getImagePath(path), status: 'none' };
+    }
+
     return images;
   }
 
-  generateNewBoard() {
-    const hw_xmax = 20;
-    const hw_ymax = 11;
-    const hw_fw = 50;
-    const hw_fh = 40;
-    
-    // Width: (cols-1) * 3/4 width + full width
-    const pixelWidth = Math.ceil((hw_xmax - 1) * (hw_fw * 0.75) + hw_fw);
-    // Height: (rows-1) * height + height + half_height (for offset rows)
-    const pixelHeight = (hw_ymax - 1) * hw_fh + hw_fh + (hw_fh / 2);
-
-    return {
-      hw_init: false, // false when game starts
-      hw_xmax: hw_xmax,
-      hw_ymax: hw_ymax,
-      hw_fw: hw_fw,
-      hw_fh: hw_fh,
-      pixelWidth: pixelWidth,
-      pixelHeight: pixelHeight,
-      hw_land: 0,
-      hw_top_field_depth: 0,
-      hw_lands: [],
-      hw_towns: [],
-      hw_parties_capitals: [],
-      hw_parties_count: 4,
-      hw_parties_names: ["Redosia","Violetnam","Bluegaria","Greenland"],
-      hw_parties_provinces_cp: [new Array(),new Array(),new Array(),new Array()],
-      hw_parties_towns: [new Array(), new Array(), new Array(), new Array()],
-      hw_parties_ports: [new Array(), new Array(), new Array(), new Array()],
-      hw_parties_lands: [new Array(), new Array(), new Array(), new Array()],
-      hw_parties_morale: [10, 10, 10, 10],
-      hw_parties_armies: [new Array(), new Array(), new Array(), new Array()],
-      hw_parties_status: [1, 1, 1, 1],
-      hw_parties_total_count: [0, 0, 0, 0],
-      hw_parties_total_power: [0, 0, 0, 0],
-      hw_parties_control: ["computer","computer","computer","computer"],
-      hw_parties_wait_for_support_field: [null,null,null,null],
-      hw_parties_wait_for_support_count: [0,0,0,0],
-      hw_parties_speech_given: [false,false,false,false],
-      hw_pact_signed: false,
-      hw_pact_just_broken: -1,
-      hw_peace: -1,
-      hw_lAID: 0,
-      hw_aTL: 0,
-      lh_area: 0,
-      human: -1, // human player id
-      human_condition: 1,
-      turns: 0,
-      wait: 0,
-      turn_party: 0,
-      difficulty: 5,
-      duel: false,
-      field: {},
-      armies: {},
-    };
+  loadImage(ref) {
+    return new Promise((resolve) => {
+      ref.img = new Image();
+      ref.img.onload  = () => { ref.status='Image loaded'; resolve(); };
+      ref.img.onerror = () => { ref.status='Failed to load image'; resolve(); };
+      ref.img.src = ref.path;
+    });
   }
 
   generateRandomMap() {
@@ -93,163 +68,229 @@ class Game {
     this.generateNewMap(mapNumber);
   }
 
-  loadImage(ref) {
-    return new Promise(function(resolve) {
-      ref.img = new Image();
-      ref.img.onload  = _ => { ref.status='Image loaded'; resolve(); };
-      ref.img.onerror = _ => { ref.status='Failed to load image'; resolve(); };
-      ref.img.src = ref.path;
+  generateNewMap(mapNumber) {
+    this.mapNumber = mapNumber;
+    
+    // Resize canvas
+    const canvas = document.getElementById('map');
+    // We calculate size from Config directly, but better to wait for State initialization or use constants?
+    // GameState constructor uses constants, so we can calculate here too.
+    const width = Config.MAP.WIDTH;
+    const height = Config.MAP.HEIGHT;
+    const hexWidth = Config.MAP.HEX_WIDTH;
+    const hexHeight = Config.MAP.HEX_HEIGHT;
+    const pixelWidth = Math.ceil((width - 1) * (hexWidth * 0.75) + hexWidth);
+    const pixelHeight = (height - 1) * hexHeight + hexHeight + (hexHeight / 2);
+
+    canvas.width = pixelWidth * 2;
+    canvas.height = pixelHeight * 2;
+
+    // Load Images
+    const imagesToLoad = [];
+    for (const key in this.images) {
+      imagesToLoad.push(this.loadImage(this.images[key]));
+    }
+
+    return Promise.all(imagesToLoad).then(() => {
+        this.startNewGame(mapNumber);
     });
   }
 
-  generateNewMap(mapNumber) {
-    this.mapNumber = mapNumber;
+  startNewGame(mapNumber) {
+     this.state = new GameState();
+     const random = new Random(mapNumber);
+     
+     // Generators & Logic
+     this.mapGenerator = new MapGenerator(this.state, random, this.pathfinder);
+     this.logic = new GameLogic(this.state, this.pathfinder, this.bot);
 
-    this.board = this.generateNewBoard();
+     // Generate Logic Map
+     this.mapGenerator.generate();
+     
+     // Generate Visual Backgrounds
+     this.mapRender.renderStaticBackground(this.state, this.images, random);
+     this.mapRender.renderSeaBackground(this.state, this.images, random);
 
-    // Resize canvas to fit map exactly
-    const canvas = document.getElementById('map');
-    canvas.width = this.board.pixelWidth * 2;
-    canvas.height = this.board.pixelHeight * 2;
+     // Calculate AI Helpers (Profitability)
+     this.calcAIHelpers();
+     
+     // Spawn Units
+     this.initUnits();
 
-    this.map = new Map(this.mapNumber, this.images);
+     // UI Updates
+     const mapStatus = document.getElementById('mapStatus');
+     if (mapStatus) {
+         mapStatus.innerHTML = `<b>Map</b> ${mapNumber}, <b>Turn</b> ${this.state.turn + 1}`;
+     }
+     
+     const startBtn = document.getElementById('startBattleButton');
+     if (startBtn) startBtn.disabled = false;
 
-    var imagesToLoad = [];
-    for (const [key, value] of Object.entries(this.images)) {
-      imagesToLoad.push(this.loadImage(this.images[key]))
-    }
-
-    var self = this;
-    return Promise
-      .all(imagesToLoad)
-      .then(function(){
-        self.map.generateMap(self.board, self.mapNumber);
-        const ctx = document.getElementById('map').getContext('2d');
-        // Initialize transform for the main canvas context
-        ctx.setTransform(2, 0, 0, 2, 0, 0);
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        
-        ctx.drawImage(self.board.background_2, 0, 0, self.board.pixelWidth, self.board.pixelHeight);
-        self.map.updateBoard(self.board);
-        self.map.calcAIHelpers(self.board);
-        self.initGame();
-
-        let mapStatus = document.getElementById('mapStatus');
-        mapStatus.innerHTML = "<b>Map</b> " + self.map.mapNumber + ", <b>Turn</b> " + (self.turns + 1);
-
-        var startBattleButton = document.getElementById('startBattleButton');
-        startBattleButton.disabled = false;
-      });
+     // Initial Draw
+     this.mapRender.drawMap(this.state, this.images);
+  }
+  
+  calcAIHelpers() {
+      // Logic from Map.js calcAIHelpers
+      // Pre-calculate distance/profitability for AI
+      // This modifies field.profitability
+      for (let p = 0; p < this.state.parties.length; p++) {
+          const capital = this.state.parties[p].capital;
+          for (let x = 0; x < this.state.width; x++) {
+              for (let y = 0; y < this.state.height; y++) {
+                  const field = this.state.getField(x, y);
+                  // Only calc if land or port?
+                  // Original: findPath from field to capital
+                  const path = this.pathfinder.findPath(field, capital, [], true);
+                  if (!path) {
+                      continue;
+                  }
+                  field.profitability[p] = -path.length;
+                  
+                  // Neighbours info
+                  const neighbours = this.pathfinder.getFurtherNeighbours(field);
+                  // Original added field itself too? "neighbours.push(field)"
+                  const checkList = [...neighbours, field];
+                  
+                  for (const n of checkList) {
+                      if (!n) continue;
+                      if (n.capital === p) field.n_capital[p] = true;
+                      if (n.estate === "town") field.n_town = true;
+                  }
+              }
+          }
+      }
   }
 
-  initGame() {
-    var board = this.board;
-    var map = this.map;
-    for (var p = 0; p < board.hw_parties_count; p++) {
-      map.unitsSpawn(p, board);
-      map.updateBoard(board);
-    }
-    this.mapRender.drawMap(board, this.images);
-    this.turns = 0;
+  initUnits() {
+      for (const party of this.state.parties) {
+          this.logic.unitsSpawn(party.id);
+          this.logic.updateBoard(); // Initial update
+      }
   }
 
   setHumanPlayer(partyId) {
-    this.board.human = partyId;
-    this.board.hw_parties_control[partyId] = "human";
+    this.state.humanPlayerId = partyId;
+    this.state.parties[partyId].control = "human";
   }
 
   startBattle() {
-    this.turns = 0;
-    this.board.turn_party = -1;
+    this.state.turn = 0;
+    this.state.turnParty = -1;
     this.nextTurn();
   }
 
   nextTurn() {
-    this.board.turn_party++;
-    if (this.board.turn_party >= 4) {
-      this.board.turn_party = 0;
-      this.turns++;
-      let gamelogElement = document.getElementById('gamelog');
-      gamelogElement.innerHTML += "Turn " + (this.turns + 1) + "<br/>";
-      
-      if (this.turns >= 150 || this.isVictory()) {
-        document.getElementById('mapNumberInput').disabled = false;
-        document.getElementById('changeMapButton').disabled = false;
-        document.getElementById('randomMapButton').disabled = false;
-        document.getElementById('startBattleButton').disabled = false;
-        return;
+    this.state.turnParty++;
+    if (this.state.turnParty >= this.state.parties.length) {
+      this.state.turnParty = 0;
+      this.state.turn++;
+      this.logic.updateGameLog("Turn " + (this.state.turn + 1));
+
+      if (this.state.turn >= 150 || this.isVictory()) {
+         this.enableMenuControls();
+         return;
       }
     }
-
-    this.board.turns = this.turns;
+    
     this.updateMapStatus();
 
-    // Skip dead parties
-    if (this.board.hw_parties_status[this.board.turn_party] == 0) {
-      this.nextTurn();
-      return;
-    }
-
-    this.map.cleanupTurn(this.board);
-    this.map.updateBoard(this.board);
-
-    if (this.board.hw_parties_control[this.board.turn_party] == "computer") {
-      this.runComputerTurn(this.map, this.board, this.board.turn_party);
-      setTimeout(() => this.nextTurn(), 200);
-    } else {
-      // Human turn
-      this.humanMovesLeft = this.map.getMovePoints(this.board.turn_party, this.board);
-      this.updateMapStatus();
-      
-      if (this.humanMovesLeft <= 0 || !this.checkHumanCanMove()) {
-        this.endHumanTurn();
+    // Skip eliminated parties
+    if (this.state.parties[this.state.turnParty].status === 0) {
+        this.nextTurn();
         return;
-      }
-
-      document.getElementById('endTurnButton').style.display = 'inline-block';
-      document.getElementById('endTurnButton').onclick = () => {
-         this.endHumanTurn();
-      };
     }
+
+    this.logic.cleanupTurn();
+    this.logic.updateBoard();
+
+    const currentParty = this.state.parties[this.state.turnParty];
+    if (currentParty.control === "computer") {
+        this.runComputerTurn(currentParty.id);
+        setTimeout(() => this.nextTurn(), 200);
+    } else {
+        // Human Turn
+        this.humanMovesLeft = this.getMovePoints(currentParty.id);
+        this.updateMapStatus();
+
+        if (this.humanMovesLeft <= 0 || !this.checkHumanCanMove()) {
+            this.endHumanTurn();
+            return;
+        }
+        
+        const endBtn = document.getElementById('endTurnButton');
+        if (endBtn) {
+            endBtn.style.display = 'inline-block';
+            endBtn.onclick = () => this.endHumanTurn();
+        }
+    }
+  }
+
+  getMovePoints(partyId) {
+     let points = 5;
+     const movableCount = this.bot.getMovableArmies(partyId, this.state).length;
+     if (points > movableCount) points = movableCount;
+     return points;
   }
 
   checkHumanCanMove() {
-    const movableArmies = this.map.bot.getMovableArmies(this.board.human, this.board);
-    for (let i = 0; i < movableArmies.length; i++) {
-      const army = movableArmies[i];
-      const possibleMoves = this.map.pathfinder.getPossibleMoves(army.field, true, false);
-      if (possibleMoves.length > 0) {
-        return true;
+      const movableArmies = this.bot.getMovableArmies(this.state.humanPlayerId, this.state);
+      for (const army of movableArmies) {
+          const moves = this.pathfinder.getPossibleMoves(army.field, true, false);
+          if (moves.length > 0) return true;
       }
-    }
-    return false;
+      return false;
   }
 
   endHumanTurn() {
-     document.getElementById('endTurnButton').style.display = 'none';
-     this.map.unitsSpawn(this.board.human, this.board);
-     this.selectedArmy = null;
+      const endBtn = document.getElementById('endTurnButton');
+      if (endBtn) endBtn.style.display = 'none';
+      
+      this.logic.unitsSpawn(this.state.humanPlayerId);
+      this.selectedArmy = null;
+      this.drawGame();
+      this.nextTurn();
+  }
+
+  runComputerTurn(partyId) {
+     // Duel logic check
+     let surviving = 0;
+     for (const p of this.state.parties) {
+         if (p.capital.party === p.id) surviving++;
+     }
+     this.state.duel = (surviving < 3);
+
+     const movePoints = this.getMovePoints(partyId);
+     this.logic.cleanupTurn();
+     this.logic.updateBoard();
+
+     for (let i = 0; i < movePoints; i++) {
+         this.logic.makeMove(partyId);
+         this.logic.updateBoard();
+     }
+     this.logic.unitsSpawn(partyId);
      this.drawGame();
-     this.nextTurn();
   }
 
   updateMapStatus() {
     let mapStatus = document.getElementById('mapStatus');
-    let status = "<b>Map</b> " + this.map.mapNumber + ", <b>Turn</b> " + (this.turns + 1);
-    status += " | Player: " + this.board.hw_parties_names[this.board.turn_party];
-    if (this.board.turn_party == this.board.human) {
-      status += " | Moves: " + this.humanMovesLeft;
+    if (!mapStatus) return;
+    
+    let status = `<b>Map</b> ${this.mapNumber}, <b>Turn</b> ${this.state.turn + 1}`;
+    status += ` | Player: ${this.state.parties[this.state.turnParty].name}`;
+    
+    if (this.state.turnParty === this.state.humanPlayerId) {
+      status += ` | Moves: ${this.humanMovesLeft}`;
     }
     mapStatus.innerHTML = status;
   }
 
   drawGame() {
-    this.mapRender.drawMap(this.board, this.images);
+    this.mapRender.drawMap(this.state, this.images, this.cursorPos);
     if (this.selectedArmy) {
       this.mapRender.drawSelection(this.selectedArmy.field);
-      const possibleMoves = this.map.pathfinder.getPossibleMoves(this.selectedArmy.field, true, false);
-      this.mapRender.drawValidMoves(possibleMoves, this.board);
+      const possibleMoves = this.pathfinder.getPossibleMoves(this.selectedArmy.field, true, false);
+      this.mapRender.drawValidMoves(possibleMoves, this.state);
     }
     if (this.hoveredField) {
       this.mapRender.drawHover(this.hoveredField);
@@ -259,118 +300,134 @@ class Game {
   handleMouseMove(event) {
     const canvas = document.getElementById('map');
     const pos = this.getMousePos(canvas, event);
-    const fieldXY = this.map.getFieldXYFromScreenXY(this.board, pos.x, pos.y);
+    this.cursorPos = pos;
+    const fieldXY = this.getFieldXYFromScreenXY(pos.x, pos.y);
     
-    if (fieldXY.fieldX < 0 || fieldXY.fieldX >= this.board.hw_xmax || fieldXY.fieldY < 0 || fieldXY.fieldY >= this.board.hw_ymax) {
-       this.hoveredField = null;
+    if (fieldXY) {
+       this.hoveredField = this.state.getField(fieldXY.fx, fieldXY.fy);
     } else {
-       this.hoveredField = this.map.getField(fieldXY.fieldX, fieldXY.fieldY, this.board);
+       this.hoveredField = null;
     }
     this.drawGame();
   }
 
   handleInput(event) {
-    if (this.board.turn_party != this.board.human) return;
-    if (this.humanMovesLeft <= 0) return;
+      if (this.state.turnParty !== this.state.humanPlayerId) return;
+      if (this.humanMovesLeft <= 0) return;
 
-    const canvas = document.getElementById('map');
-    const pos = this.getMousePos(canvas, event);
-    const fieldXY = this.map.getFieldXYFromScreenXY(this.board, pos.x, pos.y);
-    
-    if (fieldXY.fieldX < 0 || fieldXY.fieldX >= this.board.hw_xmax || fieldXY.fieldY < 0 || fieldXY.fieldY >= this.board.hw_ymax) return;
+      const canvas = document.getElementById('map');
+      const pos = this.getMousePos(canvas, event);
+      const fieldXY = this.getFieldXYFromScreenXY(pos.x, pos.y);
+      if (!fieldXY) return;
 
-    const field = this.map.getField(fieldXY.fieldX, fieldXY.fieldY, this.board);
-    if (!field) return;
+      const field = this.state.getField(fieldXY.fx, fieldXY.fy);
+      if (!field) return;
 
-    // Check if we can move first
-    if (this.selectedArmy && this.selectedArmy.party == this.board.human) {
-      const possibleMoves = this.map.pathfinder.getPossibleMoves(this.selectedArmy.field, true, false);
-      
-      if (possibleMoves.includes(field)) {
-        const success = this.map.moveArmy(this.selectedArmy, field, this.board);
-        if (success) {
-          this.humanMovesLeft--;
-          this.selectedArmy = null;
-          this.updateMapStatus();
-          this.map.updateArmies(this.board);
-          this.drawGame();
-          
-          if (this.humanMovesLeft <= 0 || !this.checkHumanCanMove()) {
-             this.endHumanTurn();
+      // 1. Move Selection
+      if (this.selectedArmy && this.selectedArmy.party === this.state.humanPlayerId) {
+          const possibleMoves = this.pathfinder.getPossibleMoves(this.selectedArmy.field, true, false);
+          if (possibleMoves.includes(field)) {
+              // Execute Move
+              // Logic returns success boolean? Original did. My logic updates state.
+              // My logic returns boolean (true if moved, false if failed combat?)
+              const success = this.logic.moveArmy(this.selectedArmy, field);
+              
+              if (success) {
+                  this.humanMovesLeft--;
+                  this.selectedArmy = null;
+                  this.updateMapStatus();
+                  this.logic.updateBoard();
+                  this.drawGame();
+                  
+                  if (this.humanMovesLeft <= 0 || !this.checkHumanCanMove()) {
+                      this.endHumanTurn();
+                  }
+                  return;
+              }
           }
+      }
+
+      // 2. Select Army
+      if (field.army && field.army.party === this.state.humanPlayerId) {
+          if (field.army.moved) return;
+
+          if (this.selectedArmy === field.army) {
+              this.selectedArmy = null;
+          } else {
+              this.selectedArmy = field.army;
+          }
+          this.drawGame();
           return;
-        }
-      }
-    }
-
-    // If not moving, check if we can select
-    if (field.army && field.army.party == this.board.human) {
-      if (field.army.moved) return;
-      
-      if (this.selectedArmy && this.selectedArmy == field.army) {
-        this.selectedArmy = null;
-        this.drawGame();
-        return;
       }
 
-      this.selectedArmy = field.army;
-      this.drawGame();
-      return;
-    }
-    
-    // Deselect if clicking elsewhere
-    if (this.selectedArmy) {
-        this.selectedArmy = null;
-        this.drawGame();
-    }
+      // 3. Deselect
+      if (this.selectedArmy) {
+          this.selectedArmy = null;
+          this.drawGame();
+      }
   }
 
   isVictory() {
-    return this.map.isVictory(this.board);
+      for (const p of this.state.parties) {
+          if (p.provincesCp && p.provincesCp.length === this.state.parties.length - 1) {
+              return true;
+          }
+      }
+      return false;
+  }
+
+  enableMenuControls() {
+      const ids = ['mapNumberInput', 'changeMapButton', 'randomMapButton', 'startBattleButton'];
+      ids.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.disabled = false;
+      });
   }
 
   getMousePos(canvas, event) {
-    var rect = canvas.getBoundingClientRect();
-    // Map to logical size matching drawing coordinates
+    const rect = canvas.getBoundingClientRect();
     return {
-      x: (event.clientX - rect.left) * (this.board.pixelWidth / rect.width),
-      y: (event.clientY - rect.top) * (this.board.pixelHeight / rect.height)
+      x: (event.clientX - rect.left) * (this.state.pixelWidth / rect.width),
+      y: (event.clientY - rect.top) * (this.state.pixelHeight / rect.height)
     };
   }
 
-  runComputerTurn(map, board, turnParty) {
-    board.turn_party = turnParty;
-    board.duel = this.isDuel(board);
+  getFieldXYFromScreenXY(screenX, screenY) {
+    // Ported from Map.js
+    const board = this.state; // Use aliases from state
+    const hw_fw = board.hexWidth;
+    const hw_fh = board.hexHeight;
+    const hw_xmax = board.width;
+    const hw_ymax = board.height;
 
-    const movePoints = map.getMovePoints(turnParty, board);
+    const approxX = Math.floor((screenX - (hw_fw / 2)) / (hw_fw / 4 * 3));
+    const approxY = Math.floor((screenY - (hw_fh / 2)) / hw_fh);
 
-    map.cleanupTurn(board);
-    map.updateBoard(board);
+    let bestDist = Infinity;
+    let bestField = null;
 
-    if (board.hw_parties_control[turnParty] == "computer") {
-      for (var i = 0; i < movePoints; i++) {
-        map.makeMove(turnParty, board, false);
+    for (let dx = -1; dx <= 2; dx++) {
+      for (let dy = -1; dy <= 2; dy++) {
+         const fx = approxX + dx;
+         const fy = approxY + dy;
+         
+         if (fx < 0 || fx >= hw_xmax || fy < 0 || fy >= hw_ymax) continue;
 
-        map.updateArmies(board);
+         const centerX = fx * (hw_fw * 0.75) + hw_fw / 2;
+         let centerY;
+         if (fx % 2 === 0) {
+           centerY = fy * hw_fh + hw_fh / 2;
+         } else {
+           centerY = fy * hw_fh + hw_fh;
+         }
+
+         const dist = Math.pow(screenX - centerX, 2) + Math.pow(screenY - centerY, 2);
+         if (dist < bestDist) {
+           bestDist = dist;
+           bestField = { fx, fy };
+         }
       }
-      map.unitsSpawn(turnParty, board);
     }
-    this.mapRender.drawMap(board, this.images);
-  }
-
-  isDuel(board) {
-    var duel = false;
-    var surviving = 0;
-    for (var i = 0; i < 4; i++) {
-      if (board.hw_parties_capitals[i].party == i) {
-        surviving++;
-      }
-    }
-    if (surviving < 3) {
-      duel = true;
-    }
-    return duel;
+    return bestField;
   }
 }
-
-export { Game }

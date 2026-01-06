@@ -1,133 +1,134 @@
-class MapRender {
-  drawMap(board, images) {
-    const canvas = document.getElementById('map');
-    const ctx = document.getElementById('map').getContext('2d');
+import { Config } from './Config.js';
+import { Utils, Random } from './Utils.js';
+
+export class MapRender {
+  constructor() {
+    this.scratchCanvas = document.createElement('canvas');
+    this.images = null;
+  }
+
+  drawMap(state, images, cursorPos) {
     this.images = images;
+    const canvas = document.getElementById('map');
+    const ctx = canvas.getContext('2d');
 
     // Scale context for HiDPI
     ctx.setTransform(2, 0, 0, 2, 0, 0);
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
-    // Clear using logical coordinates
-    ctx.clearRect(0, 0, board.pixelWidth, board.pixelHeight);
+    // Clear
+    ctx.clearRect(0, 0, state.pixelWidth, state.pixelHeight);
     
-    // Draw background using logical size
-    ctx.drawImage(board.background_2, 0, 0, board.pixelWidth, board.pixelHeight);
-
-    // Draw Shoreline Glow/Shadow around Water
-    ctx.shadowColor = "rgba(210, 180, 140, 1)"; // Sand color
-    ctx.shadowBlur = 40; 
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
-    
-    ctx.drawImage(board.background_sea, 0, 0, board.pixelWidth, board.pixelHeight);
-    
-    // Reset Shadow
-    ctx.shadowColor = "transparent";
-    ctx.shadowBlur = 0;
-
-
-    const partyColorsRGB = [
-      "255, 0, 0",
-      "255, 0, 255",
-      "0, 187, 255",
-      "0, 255, 0"
-    ];
-
-    for (var x = 0; x < board.hw_xmax; x++) {
-      for (var y = 0; y < board.hw_ymax; y++) {
-        const field = board.field["f" + x + "x" + y];
-        const xCenter = field._x;
-        const yCenter = field._y;
-
-        // Draw Tint for Territory
-        if (field.party != -1) {
-            let rgb = partyColorsRGB[field.party] || "0,0,0";
-            let alpha = 0.01; // Very faint for enemies
-            
-            if (field.party == board.human) {
-                alpha = 0.25; // Distinct for human
-            }
-            
-            this.drawHexTile(ctx, xCenter, yCenter, `rgba(${rgb}, ${alpha})`);
-        }
-
-        // Draw Grid (Base)
-        this.drawHexOutline(ctx, xCenter, yCenter, "rgba(0,0,0,0.2)", 0.5);
-
-        // Draw towns and ports
-        if (field.estate === "town") {
-          // Capital city should use a different image
-          const cityImg = field.capital >= 0 ? images["capital" + field.capital].img : images.city.img;
-          // Enforce fixed size for high-res assets
-          const width = 32;
-          const height = 32;
-          
-          if (!field.army) {
-            ctx.drawImage(cityImg, xCenter - (width / 2), yCenter - (height / 2), width, height);
-          } else {
-            ctx.save();
-            // Adjust translation for the fixed size
-            ctx.translate(xCenter - (width / 2) + 17, yCenter - (height / 2) - 5);
-            ctx.scale(0.9, 0.9);
-            ctx.drawImage(cityImg, 0, 0, width, height);
-            ctx.restore();
-          }
-        } else if (field.estate === "port") {
-          const portImg = images.port.img;
-          const width = 32;
-          const height = 32;
-          
-          if (!field.army) {
-            ctx.drawImage(portImg, xCenter - (width / 2), yCenter - (height / 2), width, height);
-          } else {
-            ctx.save();
-            ctx.translate(xCenter - (width / 2) + 25, yCenter - (height / 2) - 5)
-            ctx.scale(0.5, 0.5);
-            ctx.drawImage(portImg, 0, 0, width, height);
-            ctx.restore();
-          }
-        }
-      }
+    // 1. Static Background (Grass/Dirt)
+    if (state.backgroundCanvas) {
+        ctx.drawImage(state.backgroundCanvas, 0, 0, state.pixelWidth, state.pixelHeight);
     }
 
-    this.drawTerritoryBorders(ctx, board);
-
-    for (var x = 0; x < board.hw_xmax; x++) {
-      for (var y = 0; y < board.hw_ymax; y++) {
-        const field = board.field["f" + x + "x" + y];
-        this.drawArmyUnit(ctx, field, field._x, field._y, board);
-      }
+    // 2. Sea Background (Water/Shoreline)
+    if (state.seaCanvas) {
+        ctx.shadowColor = Config.COLORS.SHADOW_SAND;
+        ctx.shadowBlur = 40; 
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        
+        ctx.drawImage(state.seaCanvas, 0, 0, state.pixelWidth, state.pixelHeight);
+        
+        ctx.shadowColor = "transparent";
+        ctx.shadowBlur = 0;
     }
+
+    // 3. Dynamic Elements (Hex Tints, Grid, Cities)
+    this.drawGridAndTerritory(ctx, state);
+
+    // 4. Borders
+    this.drawTerritoryBorders(ctx, state);
+
+    // 5. Units
+    this.drawUnits(ctx, state);
     
-    this.drawTownNames(ctx, board);
-    
-    for (var x = 0; x < board.hw_xmax; x++) {
-      for (var y = 0; y < board.hw_ymax; y++) {
-        const field = board.field["f" + x + "x" + y];
-        this.drawArmyLabel(ctx, field, field._x, field._y);
+    // 6. Labels (Names & Stats)
+    this.drawLabels(ctx, state, cursorPos);
+  }
+
+  drawUnits(ctx, state) {
+    for (let x = 0; x < state.width; x++) {
+      for (let y = 0; y < state.height; y++) {
+        const field = state.getField(x, y);
+        if (field.army) {
+             this.drawArmyUnit(ctx, field.army, state);
+        }
       }
     }
   }
 
-  drawTerritoryBorders(ctx, board) {
-    const edgeMap = [3, 2, 1, 0, 5, 4];
-    const partyColorsRGB = [
-        "255, 0, 0",      // Red
-        "255, 0, 255",    // Magenta
-        "0, 187, 255",    // Cyan
-        "0, 255, 0"       // Green
-    ];
+  drawGridAndTerritory(ctx, state) {
+     for (let x = 0; x < state.width; x++) {
+      for (let y = 0; y < state.height; y++) {
+        const field = state.getField(x, y);
+        const xCenter = field._x;
+        const yCenter = field._y;
+
+        // Territory Tint
+        if (field.party !== -1) {
+            const rgb = Config.COLORS.PARTY_RGB[field.party] || "0,0,0";
+            let alpha = 0.01;
+            if (field.party === state.humanPlayerId) {
+                alpha = 0.25; 
+            }
+            this.drawHexTile(ctx, xCenter, yCenter, `rgba(${rgb}, ${alpha})`);
+        }
+
+        // Grid Outline
+        this.drawHexOutline(ctx, xCenter, yCenter, "rgba(0,0,0,0.2)", 0.5);
+
+        // Cities/Ports
+        if (field.estate === "town") {
+          const isCapital = field.capital >= 0;
+          const cityImg = isCapital ? this.images["capital" + field.capital].img : this.images.city.img;
+          const w = 32;
+          const h = 32;
+          
+          if (!field.army) {
+            ctx.drawImage(cityImg, xCenter - (w / 2), yCenter - (h / 2), w, h);
+          } else {
+            ctx.save();
+            ctx.translate(xCenter - (w / 2) + 17, yCenter - (h / 2) - 5);
+            ctx.scale(0.9, 0.9);
+            ctx.drawImage(cityImg, 0, 0, w, h);
+            ctx.restore();
+          }
+        } else if (field.estate === "port") {
+          const portImg = this.images.port.img;
+          const w = 32;
+          const h = 32;
+          
+          if (!field.army) {
+            ctx.drawImage(portImg, xCenter - (w / 2), yCenter - (h / 2), w, h);
+          } else {
+            ctx.save();
+            ctx.translate(xCenter - (w / 2) + 25, yCenter - (h / 2) - 5);
+            ctx.scale(0.5, 0.5);
+            ctx.drawImage(portImg, 0, 0, w, h);
+            ctx.restore();
+          }
+        }
+      }
+    }
+  }
+
+  drawTerritoryBorders(ctx, state) {
+    const edgeMap = [3, 2, 1, 0, 5, 4]; // Neighbour index mapping for shared edges
     
-    for (var x = 0; x < board.hw_xmax; x++) {
-      for (var y = 0; y < board.hw_ymax; y++) {
-        const field = board.field["f" + x + "x" + y];
-        if (field.party == -1) continue; 
+    for (let x = 0; x < state.width; x++) {
+      for (let y = 0; y < state.height; y++) {
+        const field = state.getField(x, y);
+        if (field.party === -1) continue; 
 
         const xCenter = field._x;
         const yCenter = field._y;
         
+        // Vertices of the hex
         const V = [
             {x: xCenter - 12.5, y: yCenter - 20}, // V0 TopLeft
             {x: xCenter - 25,   y: yCenter - 0},  // V1 MidLeft
@@ -137,19 +138,18 @@ class MapRender {
             {x: xCenter + 12.5, y: yCenter - 20}  // V5 TopRight
         ];
 
-        let rgb = partyColorsRGB[field.party] || "0,0,0";
+        const rgb = Config.COLORS.PARTY_RGB[field.party] || "0,0,0";
         let alphaStart = 0.6;
         let alphaLine = 0.8;
         
-        // Highlight human player faction
-        if (field.party == board.human) {
+        if (field.party === state.humanPlayerId) {
             alphaStart = 0.8; 
             alphaLine = 1.0; 
         }
 
         for (let i = 0; i < 6; i++) {
             const neighbor = field.neighbours[i];
-            if (!neighbor || neighbor.party != field.party) {
+            if (!neighbor || neighbor.party !== field.party) {
                 const edgeIndex = edgeMap[i];
                 const vStart = V[edgeIndex];
                 const vEnd = V[(edgeIndex + 1) % 6];
@@ -160,7 +160,7 @@ class MapRender {
                 
                 const grd = ctx.createLinearGradient(midX, midY, xCenter, yCenter);
                 grd.addColorStop(0, `rgba(${rgb}, ${alphaStart})`);
-                grd.addColorStop(0.5, `rgba(${rgb}, 0)`); // Fade out halfway
+                grd.addColorStop(0.5, `rgba(${rgb}, 0)`);
                 
                 ctx.fillStyle = grd;
                 ctx.beginPath();
@@ -170,7 +170,7 @@ class MapRender {
                 ctx.closePath();
                 ctx.fill();
                 
-                // Crisp Line on Edge
+                // Crisp Line
                 ctx.beginPath();
                 ctx.moveTo(vStart.x, vStart.y);
                 ctx.lineTo(vEnd.x, vEnd.y);
@@ -184,29 +184,21 @@ class MapRender {
     }
   }
 
-  getUnitRenderData(field) {
-    if (!field.army) return null;
-    
+  getUnitRenderData(army) {
+    if (!army) return null;
+    const field = army.field;
     let type = 'infantry';
+    
     if (field.type === 'water') {
         type = 'warship';
-    } else if (field.army.count >= 75) {
+    } else if (army.count >= Config.UNITS.THRESHOLD.TANK) {
         type = 'tank';
-    } else if (field.army.count >= 40) {
+    } else if (army.count >= Config.UNITS.THRESHOLD.ARTILLERY) {
         type = 'artillery';
     }
     
     const img = this.images[type].img;
-    
-    // Scale configuration for each unit type
-    const scales = {
-        infantry: 0.10,
-        artillery: 0.12,
-        tank: 0.13,
-        warship: 0.13
-    };
-    
-    const scale = scales[type] || 0.1;
+    const scale = Config.UNITS.SCALE[type.toUpperCase()] || 0.1;
     
     return {
         img: img,
@@ -215,166 +207,175 @@ class MapRender {
     };
   }
 
-  drawArmyUnit(ctx, field, xCenter, yCenter, board) {
-    const unitData = this.getUnitRenderData(field);
-    if (unitData) {
-      const { img: unitImg, width, height } = unitData;
+  drawArmyUnit(ctx, army, state) {
+    const field = army.field;
+    const xCenter = field._x; // Or army._x for interpolation?
+    const yCenter = field._y;
 
-      const partyColorsRGB = [
-          "255, 0, 0",      // Red
-          "255, 0, 255",    // Magenta
-          "0, 187, 255",    // Cyan
-          "0, 255, 0"       // Green
-      ];
-      let rgb = partyColorsRGB[field.army.party] || "0,0,0";
+    const unitData = this.getUnitRenderData(army);
+    if (!unitData) return;
+    
+    const { img: unitImg, width, height } = unitData;
+    const rgb = Config.COLORS.PARTY_RGB[army.party] || "0,0,0";
 
-      // Initialize scratch canvas for tinting (High DPI for sharpness)
-      const scaleFactor = 2; 
-      const sWidth = width * scaleFactor;
-      const sHeight = height * scaleFactor;
+    const scaleFactor = 2; 
+    const sWidth = width * scaleFactor;
+    const sHeight = height * scaleFactor;
 
-      if (!this.scratchCanvas) {
-          this.scratchCanvas = document.createElement('canvas');
+    if (!this.scratchCanvas) this.scratchCanvas = document.createElement('canvas');
+    if (this.scratchCanvas.width < sWidth || this.scratchCanvas.height < sHeight) {
+        this.scratchCanvas.width = sWidth;
+        this.scratchCanvas.height = sHeight;
+    }
+    const sCtx = this.scratchCanvas.getContext('2d');
+    sCtx.clearRect(0, 0, sWidth, sHeight);
+
+    sCtx.imageSmoothingEnabled = true;
+    sCtx.imageSmoothingQuality = 'high';
+    sCtx.drawImage(unitImg, 0, 0, sWidth, sHeight);
+    
+    const isMovable = !army.moved && (army.party === state.humanPlayerId);
+
+    if (isMovable) {
+        sCtx.globalCompositeOperation = 'source-atop'; 
+        sCtx.fillStyle = Config.COLORS.TINT_MOVABLE;
+        sCtx.fillRect(0, 0, sWidth, sHeight);
+    }
+    sCtx.globalCompositeOperation = 'source-over'; 
+
+    if (isMovable) {
+        ctx.save();
+        ctx.shadowColor = Config.COLORS.GLOW_MOVABLE;
+        ctx.shadowBlur = 20;
+        const OFFSET = 10000;
+        ctx.shadowOffsetX = OFFSET;
+        ctx.drawImage(this.scratchCanvas, 0, 0, sWidth, sHeight, xCenter - width/2 - OFFSET, yCenter - height/2, width, height);
+        ctx.restore();
+    }
+
+    ctx.save();
+    ctx.shadowColor = `rgba(${rgb}, 0.8)`;
+    ctx.shadowBlur = 15;
+    ctx.drawImage(this.scratchCanvas, 0, 0, sWidth, sHeight, xCenter - width/2, yCenter - height/2, width, height);
+    ctx.restore();
+  }
+
+  drawLabels(ctx, state, cursorPos) {
+     const isGameRunning = state.humanPlayerId !== -1;
+     this.drawTownNames(ctx, state, cursorPos, isGameRunning);
+
+     for (let x = 0; x < state.width; x++) {
+      for (let y = 0; y < state.height; y++) {
+        const field = state.getField(x, y);
+        if (field.army) {
+            this.drawArmyLabel(ctx, field.army, cursorPos, isGameRunning);
+        }
       }
-      // Ensure scratch canvas is large enough
-      if (this.scratchCanvas.width < sWidth || this.scratchCanvas.height < sHeight) {
-          this.scratchCanvas.width = sWidth;
-          this.scratchCanvas.height = sHeight;
-      }
-      const sCtx = this.scratchCanvas.getContext('2d');
-      sCtx.clearRect(0, 0, sWidth, sHeight);
+     }
+  }
 
-      // 1. Prepare Tinted Body (High Res)
-      // Use high quality smoothing when scaling down/up
-      sCtx.imageSmoothingEnabled = true;
-      sCtx.imageSmoothingQuality = 'high';
-      sCtx.drawImage(unitImg, 0, 0, sWidth, sHeight);
+  getOpacity(x, y, cursorPos, isGameRunning) {
+      if (!isGameRunning) return 1.0;
+      if (!cursorPos) return 0.0;
       
-      // Check if unit should appear movable (Human & Not Moved)
-      // AI units always appear as "immovable" (White + Glow only)
-      const isMovable = !field.army.moved && (field.army.party == board.human);
-
-      // Only tint movable units (Prominent Yellow Tint)
-      if (isMovable) {
-          sCtx.globalCompositeOperation = 'source-atop'; 
-          sCtx.fillStyle = `rgb(255, 236, 88)`; // Strong Yellow tint
-          sCtx.fillRect(0, 0, sWidth, sHeight);
-      }
-      sCtx.globalCompositeOperation = 'source-over'; // Reset
-
-      // 2. Draw Glows and Body
-      if (isMovable) {
-          // Pass 1: Golden Outer Glow (Shadow Only)
-          ctx.save();
-          ctx.shadowColor = "rgba(255, 225, 0, 1.0)"; // Bright Yellow Glow
-          ctx.shadowBlur = 20;
-          const OFFSET = 10000;
-          ctx.shadowOffsetX = OFFSET;
-          ctx.drawImage(this.scratchCanvas, 0, 0, sWidth, sHeight, xCenter - width/2 - OFFSET, yCenter - height/2, width, height);
-          ctx.restore();
-      }
-
-      // Pass 2: Faction Glow + Body
-      ctx.save();
-      ctx.shadowColor = `rgba(${rgb}, 0.8)`;
-      ctx.shadowBlur = 15;
-      // Draw the high-res scratch image scaled down to target size
-      ctx.drawImage(this.scratchCanvas, 0, 0, sWidth, sHeight, xCenter - width/2, yCenter - height/2, width, height);
-      ctx.restore();
-    }
+      const dx = x - cursorPos.x;
+      const dy = y - cursorPos.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      
+      const MAX_DIST = 250; // Pixels radius
+      let alpha = 1 - (dist / MAX_DIST);
+      if (alpha < 0) alpha = 0;
+      return alpha;
   }
 
-  drawArmyLabel(ctx, field, xCenter, yCenter) {
-    const unitData = this.getUnitRenderData(field);
-    if (unitData) {
-       const { height } = unitData;
+  drawArmyLabel(ctx, army, cursorPos, isGameRunning) {
+    const field = army.field;
+    const xCenter = field._x;
+    const yCenter = field._y;
+    
+    const alpha = this.getOpacity(xCenter, yCenter, cursorPos, isGameRunning);
+    if (alpha <= 0) return;
 
-       // Position: Above the head
-       const labelY = yCenter - (height / 2) - 10;
-       
-       const count = field.army.count;
-       const morale = field.army.morale;
-       
-       ctx.font = 'bold 12px "Roboto Condensed", sans-serif';
-       
-       const text = `${count} | ${morale}`;
-       const textWidth = ctx.measureText(text).width;
-       const padding = 6;
-       const boxWidth = textWidth + padding * 2;
-       const boxHeight = 18;
-       
-       // Faction-tinted Pill
-       const partyColorsRGB = [
-          "255, 0, 0",      // Red
-          "255, 0, 255",    // Magenta
-          "0, 187, 255",    // Cyan
-          "0, 255, 0"       // Green
-       ];
-       let rgb = partyColorsRGB[field.army.party] || "0,0,0";
+    // Center label on unit
+    const labelY = yCenter;
+    
+    const count = army.count;
+    const morale = army.morale;
+    
+    ctx.font = 'bold 12px "Roboto Condensed", sans-serif';
+    const text = `${count} | ${morale}`;
+    const textWidth = ctx.measureText(text).width;
+    const padding = 6;
+    const boxWidth = textWidth + padding * 2;
+    const boxHeight = 18;
+    
+    const rgb = Config.COLORS.PARTY_RGB[army.party] || "0,0,0";
 
-       ctx.beginPath();
-       if (ctx.roundRect) {
-         ctx.roundRect(xCenter - boxWidth/2, labelY - boxHeight/2, boxWidth, boxHeight, 8);
-       } else {
-         ctx.rect(xCenter - boxWidth/2, labelY - boxHeight/2, boxWidth, boxHeight);
-       }
-       // Tinted background (Dimmer and more transparent)
-       ctx.fillStyle = `rgba(${rgb}, 0.5)`;
-       ctx.fill();
-       ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-       ctx.lineWidth = 1;
-       ctx.stroke();
-       
-       // Draw Text
-       ctx.textAlign = 'center';
-       ctx.textBaseline = 'middle';
-       ctx.fillStyle = 'white';
-       ctx.fillText(text, xCenter, labelY);
-       
-       // Reset
-       ctx.textAlign = 'start';
-       ctx.textBaseline = 'alphabetic';
+    // Box
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(xCenter - boxWidth/2, labelY - boxHeight/2, boxWidth, boxHeight, 8);
+    } else {
+      ctx.rect(xCenter - boxWidth/2, labelY - boxHeight/2, boxWidth, boxHeight);
     }
+    // Background alpha is combined with globalAlpha
+    ctx.fillStyle = `rgba(${rgb}, 0.5)`; 
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'white';
+    ctx.fillText(text, xCenter, labelY);
+    
+    ctx.restore(); // Restore globalAlpha
+    ctx.textAlign = 'start';
+    ctx.textBaseline = 'alphabetic';
   }
 
-  drawTownNames(ctx, board) {
+  drawTownNames(ctx, state, cursorPos, isGameRunning) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
     ctx.font = 'bold 12px "Roboto Condensed", sans-serif';
     ctx.lineWidth = 3;
 
-    for (var x = 0; x < board.hw_xmax; x++) {
-      for (var y = 0; y < board.hw_ymax; y++) {
-        const field = board.field["f" + x + "x" + y];
-        const xCenter = field._x;
-        const yCenter = field._y;
+    for (let x = 0; x < state.width; x++) {
+      for (let y = 0; y < state.height; y++) {
+        const town = state.getField(x, y);
+        if (town.estate === "town" || town.estate === "port") {
+            const alpha = this.getOpacity(town._x, town._y, cursorPos, isGameRunning);
+            if (alpha <= 0) continue;
 
-        // Draw towns and ports
-        if (field.estate === "town" || field.estate === "port") {
-          let yPos = yCenter - 17;
-          
-          if (yPos < 15) {
-             ctx.textBaseline = 'top';
-             yPos = yCenter + 20; 
-          } else {
-             ctx.textBaseline = 'bottom';
-          }
+            let yPos = town._y - 17;
+            if (yPos < 15) {
+                 ctx.textBaseline = 'top';
+                 yPos = town._y + 20; 
+            } else {
+                 ctx.textBaseline = 'bottom';
+            }
 
-          ctx.strokeStyle = 'black';
-          ctx.strokeText(field.town_name, xCenter, yPos);
-          ctx.fillStyle = 'white';
-          ctx.fillText(field.town_name, xCenter, yPos);
+            ctx.save();
+            ctx.globalAlpha = alpha;
+
+            ctx.strokeStyle = 'black';
+            ctx.strokeText(town.town_name, town._x, yPos);
+            ctx.fillStyle = 'white';
+            ctx.fillText(town.town_name, town._x, yPos);
+            
+            ctx.restore();
         }
       }
     }
-    // Reset defaults
     ctx.textAlign = 'start';
     ctx.textBaseline = 'alphabetic';
   }
 
   drawHexOutline(ctx, xCenter, yCenter, borderColor, borderWidth) {
-    const numberOfSides = 6;
-    const size = 25;
     ctx.beginPath();
     ctx.moveTo(xCenter - 12.5, yCenter - 20);
     ctx.lineTo(xCenter - 24, yCenter - 0);
@@ -383,14 +384,12 @@ class MapRender {
     ctx.lineTo(xCenter + 24, yCenter + 0);
     ctx.lineTo(xCenter + 12.5, yCenter - 20);
     ctx.closePath();
-    ctx.strokeStyle = borderColor || "rgba(255, 255, 102, 0.3)";
-    ctx.lineWidth = borderWidth || 0.5;
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = borderWidth;
     ctx.stroke();
   }
 
   drawHexTile(ctx, xCenter, yCenter, color) {
-    const numberOfSides = 6;
-    const size = 25;
     ctx.beginPath();
     ctx.moveTo(xCenter - 12.5, yCenter - 20);
     ctx.lineTo(xCenter - 25, yCenter - 0);
@@ -398,60 +397,43 @@ class MapRender {
     ctx.lineTo(xCenter + 12.5, yCenter + 20);
     ctx.lineTo(xCenter + 25, yCenter + 0);
     ctx.lineTo(xCenter + 12.5, yCenter - 20);
-    ctx.strokeStyle = "#000000";
-    ctx.lineWidth = 0.1;
     ctx.fillStyle = color;
     ctx.fill();
-    ctx.stroke();
-    ctx.closePath();
-  }
-
-  drawCircle(ctx, xCenter, yCenter, radius, fillColor, outlineColor) {
-    const startAngle = 0 * Math.PI;
-    const endAngle = 2.0 * Math.PI
-
-    ctx.beginPath();
-    ctx.arc(xCenter, yCenter, radius, startAngle, endAngle);
-    ctx.fillStyle = fillColor;
-    ctx.fill();
-    ctx.strokeStyle = outlineColor;
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 0.1;
     ctx.stroke();
     ctx.closePath();
   }
 
   drawSelection(field) {
-    const ctx = document.getElementById('map').getContext('2d');
-    const x = field._x;
-    const y = field._y;
+     const ctx = document.getElementById('map').getContext('2d');
+     const x = field._x;
+     const y = field._y;
     
-    ctx.beginPath();
-    ctx.arc(x, y, 20, 0, 2 * Math.PI);
-    ctx.strokeStyle = "#FFFFFF";
-    ctx.lineWidth = 3;
-    ctx.stroke();
+     ctx.beginPath();
+     ctx.arc(x, y, 20, 0, 2 * Math.PI);
+     ctx.strokeStyle = "#FFFFFF";
+     ctx.lineWidth = 3;
+     ctx.stroke();
     
-    ctx.beginPath();
-    ctx.arc(x, y, 22, 0, 2 * Math.PI);
-    ctx.strokeStyle = "rgba(0,0,0,0.5)";
-    ctx.lineWidth = 1;
-    ctx.stroke();
+     ctx.beginPath();
+     ctx.arc(x, y, 22, 0, 2 * Math.PI);
+     ctx.strokeStyle = "rgba(0,0,0,0.5)";
+     ctx.lineWidth = 1;
+     ctx.stroke();
   }
-
-  drawValidMoves(fields, board) {
+  
+  drawValidMoves(fields, state) {
     const ctx = document.getElementById('map').getContext('2d');
-    for (let i = 0; i < fields.length; i++) {
-      let field = fields[i];
-      let color = "rgba(255, 255, 255, 0.4)"; // Default move
-      
+    for (const field of fields) {
+      let color = "rgba(255, 255, 255, 0.4)"; 
       if (field.army) {
-        if (field.army.party != board.human) {
+        if (field.army.party !== state.humanPlayerId) {
            color = "rgba(255, 0, 0, 0.4)"; // Attack
         } else {
            color = "rgba(0, 255, 0, 0.4)"; // Merge
         }
       }
-      
       this.drawHexTile(ctx, field._x, field._y, color);
     }
   }
@@ -473,6 +455,90 @@ class MapRender {
     ctx.lineWidth = 2;
     ctx.stroke();
   }
-}
 
-export { MapRender }
+  // --- Static Layer Generation ---
+
+  renderStaticBackground(state, images, random) {
+      const canvas = document.createElement('canvas');
+      canvas.width = state.pixelWidth * 2;
+      canvas.height = state.pixelHeight * 2;
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(2, 0, 0, 2, 0, 0);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // Base Fill
+      ctx.fillStyle = "#4b5e28"; 
+      ctx.fillRect(0, 0, state.pixelWidth, state.pixelHeight);
+
+      // Texture Splatting (7x4 grid logic from original)
+      // We can use a simpler approach or stick to the original "Big Tiles" approach
+      // Original logic was: 7x4 grid of 125px tiles.
+      for (let x = 0; x < 7; x++) {
+          for (let y = 0; y < 4; y++) {
+             // Random selection
+             // Note: using local random for visuals
+             const dirtIdx = random.next(6) + 1;
+             const grassIdx = random.next(6) + 1;
+             const grassImg = images["grassBg" + grassIdx].img;
+             
+             // Random Transforms
+             const flipH = random.next(2);
+             const flipV = random.next(2);
+             const rotateDeg = random.next(4) * 90;
+             
+             const destX = (x * 125) - 15;
+             const destY = (y * 125) - 15;
+             const w = 155;
+             const h = 155;
+
+             ctx.save();
+             ctx.translate(destX + w/2, destY + h/2);
+             ctx.rotate(Utils.degToRad(rotateDeg));
+             ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+             ctx.translate(-w/2, -h/2);
+             
+             ctx.drawImage(grassImg, 0, 0, w, h);
+             ctx.restore();
+          }
+      }
+      
+      state.backgroundCanvas = canvas;
+  }
+
+  renderSeaBackground(state, images, random) {
+      const canvas = document.createElement('canvas');
+      canvas.width = state.pixelWidth * 2;
+      canvas.height = state.pixelHeight * 2;
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(2, 0, 0, 2, 0, 0);
+      
+      for (let x = 0; x < state.width; x++) {
+          for (let y = 0; y < state.height; y++) {
+              const field = state.getField(x, y);
+              if (field.type === 'water') {
+                  const seaIdx = random.next(6) + 1;
+                  const seaImg = images["seaBg" + seaIdx].img;
+                  
+                  const flipH = random.next(2);
+                  const flipV = random.next(2);
+                  const rotateDeg = random.next(2) * 180;
+                  
+                  const w = 61;
+                  const h = 56;
+                  const destX = field._x; // Center
+                  const destY = field._y; // Center
+                  
+                  ctx.save();
+                  ctx.translate(destX, destY);
+                  ctx.rotate(Utils.degToRad(rotateDeg));
+                  ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+                  ctx.drawImage(seaImg, -w/2, -h/2, w, h);
+                  ctx.restore();
+              }
+          }
+      }
+      
+      state.seaCanvas = canvas;
+  }
+}
