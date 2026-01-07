@@ -19,6 +19,20 @@ export class Game {
     this.selectedArmy = null;
     this.hoveredField = null;
     this.cursorPos = { x: 0, y: 0 };
+    
+    // Animation Loop
+    this.lastTime = 0;
+    this.loop = this.loop.bind(this);
+  }
+
+  loop(timestamp) {
+    if (this.state) {
+      if (this.logic) {
+         this.logic.tick();
+      }
+      this.drawGame();
+    }
+    requestAnimationFrame(this.loop);
   }
 
   prepareImages() {
@@ -93,6 +107,7 @@ export class Game {
 
     return Promise.all(imagesToLoad).then(() => {
         this.startNewGame(mapNumber);
+        requestAnimationFrame(this.loop);
     });
   }
 
@@ -207,7 +222,6 @@ export class Game {
     const currentParty = this.state.parties[this.state.turnParty];
     if (currentParty.control === "computer") {
         this.runComputerTurn(currentParty.id);
-        setTimeout(() => this.nextTurn(), 200);
     } else {
         // Human Turn
         this.humanMovesLeft = this.getMovePoints(currentParty.id);
@@ -264,12 +278,35 @@ export class Game {
      this.logic.cleanupTurn();
      this.logic.updateBoard();
 
-     for (let i = 0; i < movePoints; i++) {
-         this.logic.makeMove(partyId);
-         this.logic.updateBoard();
-     }
-     this.logic.unitsSpawn(partyId);
-     this.drawGame();
+     let moveIndex = 0;
+     const executeMove = () => {
+        if (moveIndex >= movePoints) {
+            this.logic.unitsSpawn(partyId);
+            this.drawGame();
+            setTimeout(() => this.nextTurn(), 200);
+            return;
+        }
+
+        this.logic.makeMove(partyId);
+        this.logic.updateBoard();
+
+        let animating = false;
+        for (const key in this.state.armies) {
+            if (this.state.armies[key].anim) {
+                animating = true;
+                break;
+            }
+        }
+
+        moveIndex++;
+        if (animating) {
+            setTimeout(executeMove, 400); // Wait for animation
+        } else {
+            setTimeout(executeMove, 10); // Minimal delay
+        }
+     };
+
+     executeMove();
   }
 
   updateMapStatus() {

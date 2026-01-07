@@ -5,9 +5,16 @@ export class MapRender {
   constructor() {
     this.scratchCanvas = document.createElement('canvas');
     this.images = null;
+    this.cachedEstates = null;
+    this.lastState = null;
   }
 
   drawMap(state, images, cursorPos) {
+    if (this.lastState !== state) {
+        this.cacheEstates(state);
+        this.lastState = state;
+    }
+
     this.images = images;
     const canvas = document.getElementById('map');
     const ctx = canvas.getContext('2d');
@@ -52,14 +59,43 @@ export class MapRender {
   }
 
   drawUnits(ctx, state) {
-    for (let x = 0; x < state.width; x++) {
-      for (let y = 0; y < state.height; y++) {
-        const field = state.getField(x, y);
-        if (field.army) {
-             this.drawArmyUnit(ctx, field.army, state);
+    const armies = Object.values(state.armies);
+    // Sort by Y for correct occlusion
+    armies.sort((a, b) => {
+        let ay = a.field._y;
+        let by = b.field._y;
+        if (a.anim) {
+             const now = performance.now();
+             let progress = (now - a.anim.startTime) / a.anim.duration;
+             if (progress < 0) progress = 0;
+             else if (progress > 1) progress = 1;
+             ay = a.anim.start.y + (a.anim.end.y - a.anim.start.y) * progress;
         }
-      }
+        if (b.anim) {
+             const now = performance.now();
+             let progress = (now - b.anim.startTime) / b.anim.duration;
+             if (progress < 0) progress = 0;
+             else if (progress > 1) progress = 1;
+             by = b.anim.start.y + (b.anim.end.y - b.anim.start.y) * progress;
+        }
+        return ay - by;
+    });
+
+    for (const army of armies) {
+         this.drawArmyUnit(ctx, army, state);
     }
+  }
+
+  cacheEstates(state) {
+      this.cachedEstates = [];
+      for (let x = 0; x < state.width; x++) {
+          for (let y = 0; y < state.height; y++) {
+              const field = state.getField(x, y);
+              if (field.estate) {
+                  this.cachedEstates.push(field);
+              }
+          }
+      }
   }
 
   drawGridAndTerritory(ctx, state) {
@@ -216,8 +252,23 @@ export class MapRender {
 
   drawArmyUnit(ctx, army, state) {
     const field = army.field;
-    const xCenter = field._x; // Or army._x for interpolation?
-    const yCenter = field._y;
+    let xCenter = field._x; 
+    let yCenter = field._y;
+
+    if (army.anim) {
+        const now = performance.now();
+        let progress = (now - army.anim.startTime) / army.anim.duration;
+        if (progress < 0) progress = 0;
+        if (progress > 1) {
+             progress = 1;
+             delete army.anim;
+        } else {
+             const start = army.anim.start;
+             const end = army.anim.end;
+             xCenter = start.x + (end.x - start.x) * progress;
+             yCenter = start.y + (end.y - start.y) * progress;
+        }
+    }
 
     const unitData = this.getUnitRenderData(army);
     if (!unitData) return;
@@ -252,13 +303,9 @@ export class MapRender {
      const isGameRunning = state.humanPlayerId !== -1;
      this.drawTownNames(ctx, state, cursorPos, isGameRunning);
 
-     for (let x = 0; x < state.width; x++) {
-      for (let y = 0; y < state.height; y++) {
-        const field = state.getField(x, y);
-        if (field.army) {
-            this.drawArmyLabel(ctx, field.army, cursorPos, isGameRunning);
-        }
-      }
+     const armies = Object.values(state.armies);
+     for (const army of armies) {
+         this.drawArmyLabel(ctx, army, cursorPos, isGameRunning);
      }
   }
 
@@ -268,9 +315,13 @@ export class MapRender {
       
       const dx = x - cursorPos.x;
       const dy = y - cursorPos.y;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-      
-      const MAX_DIST = 250; // Pixels radius
+      const distSq = dx*dx + dy*dy;
+      const MAX_DIST = 250;
+      const MAX_DIST_SQ = MAX_DIST * MAX_DIST;
+
+      if (distSq > MAX_DIST_SQ) return 0.0;
+
+      const dist = Math.sqrt(distSq);
       let alpha = 1 - (dist / MAX_DIST);
       if (alpha < 0) alpha = 0;
       return alpha;
@@ -278,8 +329,21 @@ export class MapRender {
 
   drawArmyLabel(ctx, army, cursorPos, isGameRunning) {
     const field = army.field;
-    const xCenter = field._x;
-    const yCenter = field._y;
+    let xCenter = field._x;
+    let yCenter = field._y;
+
+    if (army.anim) {
+         // Use same interpolation for label
+         const now = performance.now();
+         let progress = (now - army.anim.startTime) / army.anim.duration;
+         if (progress > 1) progress = 1;
+         else if (progress < 0) progress = 0;
+         
+         const start = army.anim.start;
+         const end = army.anim.end;
+         xCenter = start.x + (end.x - start.x) * progress;
+         yCenter = start.y + (end.y - start.y) * progress;
+    }
     
     const alpha = this.getOpacity(xCenter, yCenter, cursorPos, isGameRunning);
     if (alpha <= 0) return;
@@ -332,9 +396,10 @@ export class MapRender {
     ctx.font = 'bold 12px "Roboto Condensed", sans-serif';
     ctx.lineWidth = 3;
 
-    for (let x = 0; x < state.width; x++) {
-      for (let y = 0; y < state.height; y++) {
-        const town = state.getField(x, y);
+    const estates = this.cachedEstates || [];
+
+    for (const town of estates) {
+        // Double check estate still exists (should be static, but safety)
         if (town.estate === "town" || town.estate === "port") {
             const alpha = this.getOpacity(town._x, town._y, cursorPos, isGameRunning);
             if (alpha <= 0) continue;
@@ -357,7 +422,6 @@ export class MapRender {
             
             ctx.restore();
         }
-      }
     }
     ctx.textAlign = 'start';
     ctx.textBaseline = 'alphabetic';

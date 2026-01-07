@@ -17,6 +17,19 @@ export class GameLogic {
         if (gamelogElement) gamelogElement.innerHTML += message + "<br/>";
     }
 
+    tick() {
+         for (const key in this.state.armies) {
+             const army = this.state.armies[key];
+             if (army.remove_time > 0) {
+                 army.remove_time--;
+                 if (army.remove_time === 0) {
+                     this.deleteArmy(army);
+                     delete this.state.armies[key];
+                 }
+             }
+         }
+    }
+
     // --- Turn Management ---
 
     cleanupTurn() {
@@ -131,12 +144,7 @@ export class GameLogic {
         for (const key in this.state.armies) {
             const army = this.state.armies[key];
             
-            // Interpolation check (simplified for now: if moved flag is false? or just always cleanup if remove set)
-            // Original code waited for animation. We assume instant move logic for now or let animation happen in Render?
-            // If we delete it from state, Render won't draw it (if we iterated state.armies).
-            // But Render iterates fields. If we delete it from field, Render won't draw it.
-            
-            if (army.remove || army.remove_time > 0) {
+            if (army.remove && army.remove_time < 0) {
                 // Remove from waiting lists
                 if (army.waiting) army.waiting.is_waiting = false;
                 
@@ -267,6 +275,14 @@ export class GameLogic {
     moveArmy(army, targetField) {
         const sourceField = army.field;
         this.updateGameLog(`${this.state.parties[army.party].name} moved unit from (${sourceField.fx},${sourceField.fy}) to (${targetField.fx},${targetField.fy})`);
+
+        // Animation setup
+        army.anim = {
+            start: { x: sourceField._x, y: sourceField._y },
+            end: { x: targetField._x, y: targetField._y },
+            startTime: performance.now(),
+            duration: 300 
+        };
 
         // Pact check
         if (this.state.peace >= 0) {
