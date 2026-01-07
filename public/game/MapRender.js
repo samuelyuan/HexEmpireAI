@@ -248,6 +248,11 @@ export class MapRender {
     const { img: unitImg, width, height } = unitData;
     const rgb = Config.COLORS.PARTY_RGB[army.party] || "0,0,0";
 
+    // Get animation properties from visual object
+    const scale = army.visual && army.visual.scale !== undefined ? army.visual.scale : 1;
+    const rotation = army.visual && army.visual.rotation !== undefined ? army.visual.rotation : 0;
+    const opacity = army.visual && army.visual.opacity !== undefined ? army.visual.opacity : 1;
+
     const scaleFactor = 2; 
     const sWidth = width * scaleFactor;
     const sHeight = height * scaleFactor;
@@ -265,9 +270,16 @@ export class MapRender {
     sCtx.drawImage(unitImg, 0, 0, sWidth, sHeight);
     
     ctx.save();
+    
+    // Apply transformations for animations
+    ctx.translate(xCenter, yCenter);
+    ctx.rotate(Utils.degToRad(rotation));
+    ctx.scale(scale, scale);
+    ctx.globalAlpha = opacity;
+    
     ctx.shadowColor = `rgba(${rgb}, 0.8)`;
     ctx.shadowBlur = 15;
-    ctx.drawImage(this.scratchCanvas, 0, 0, sWidth, sHeight, xCenter - width/2, yCenter - height/2, width, height);
+    ctx.drawImage(this.scratchCanvas, 0, 0, sWidth, sHeight, -width/2, -height/2, width, height);
     ctx.restore();
   }
 

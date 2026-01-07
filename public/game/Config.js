@@ -36,7 +36,12 @@ export const Config = {
     ANIMATION: {
         MOVE_DURATION: 0.5,
         MOVE_WAIT: 550,
-        MOVE_WAIT_MIN: 50
+        MOVE_WAIT_MIN: 50,
+        MERGE_DURATION: 0.4,
+        MERGE_SCALE: 1.3,
+        ATTACK_DURATION: 0.3,
+        ATTACK_SHAKE: 8,
+        EXPLOSION_DURATION: 0.6
     },
     IMAGES: {
         GRASS_BG: { prefix: 'l_', count: 6 },

@@ -1,4 +1,5 @@
 import { Config } from './Config.js';
+import { Animations } from './Animations.js';
 
 export class GameLogic {
     constructor(gameState, pathfinder, bot) {
@@ -276,25 +277,8 @@ export class GameLogic {
         const sourceField = army.field;
         this.updateGameLog(`${this.state.parties[army.party].name} moved unit from (${sourceField.fx},${sourceField.fy}) to (${targetField.fx},${targetField.fy})`);
 
-        // GSAP Animation setup
-        if (!army.visual) army.visual = { x: sourceField._x, y: sourceField._y };
-        else { 
-            army.visual.x = sourceField._x; 
-            army.visual.y = sourceField._y; 
-        }
-
-        if (typeof gsap !== 'undefined') {
-            gsap.to(army.visual, {
-                x: targetField._x,
-                y: targetField._y,
-                duration: Config.ANIMATION.MOVE_DURATION,
-                ease: "power1.inOut"
-            });
-        } else {
-            // Fallback: Snap to target
-            army.visual.x = targetField._x;
-            army.visual.y = targetField._y;
-        }
+        // Animate army movement
+        Animations.animateMove(army, targetField._x, targetField._y);
 
         // Pact check
         if (this.state.peace >= 0) {
@@ -321,7 +305,9 @@ export class GameLogic {
                 return false;
             }
         } else if (targetField.army && targetField.party === army.party) {
-            // Join
+            // Join - Animate merge effect
+            Animations.animateMerge(army, targetField.army);
+            
             if (targetField.army.count + army.count <= Config.UNITS.MAX_COUNT) {
                 this.joinUnits(army.count, army.morale, army.party, targetField.army);
             } else {
@@ -352,6 +338,9 @@ export class GameLogic {
         const attPower = attacker.count + attacker.morale;
         const defPower = defender.count + defender.morale;
 
+        // Animate attack sequence
+        Animations.animateAttack(attacker, defender);
+
         if (attPower > defPower) {
             // Attacker Wins
             this.addMoraleForAll(-Math.floor(defender.count / 10), defender.party);
@@ -364,6 +353,7 @@ export class GameLogic {
             
             if (attacker.morale > attacker.count) attacker.morale = attacker.count;
 
+            Animations.animateExplosion(defender);
             this.setExplosion(attacker, defender, attacker);
             return true;
         } else {
@@ -377,6 +367,7 @@ export class GameLogic {
 
             if (defender.morale > defender.count) defender.morale = defender.count;
 
+            Animations.animateExplosion(attacker);
             this.setExplosion(attacker, attacker, defender);
             return false;
         }
@@ -597,4 +588,5 @@ export class GameLogic {
              this.annexLand(partyId, town, true);
          }
     }
+
 }
