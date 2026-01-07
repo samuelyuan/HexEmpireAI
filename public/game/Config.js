@@ -33,6 +33,11 @@ export const Config = {
             ARTILLERY: 40
         }
     },
+    ANIMATION: {
+        MOVE_DURATION: 0.5,
+        MOVE_WAIT: 550,
+        MOVE_WAIT_MIN: 50
+    },
     IMAGES: {
         GRASS_BG: { prefix: 'l_', count: 6 },
         SEA_BG: { prefix: 'm_', count: 6 },

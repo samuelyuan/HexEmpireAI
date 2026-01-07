@@ -291,18 +291,21 @@ export class Game {
         this.logic.updateBoard();
 
         let animating = false;
-        for (const key in this.state.armies) {
-            if (this.state.armies[key].anim) {
-                animating = true;
-                break;
+        if (typeof gsap !== 'undefined') {
+            for (const key in this.state.armies) {
+                const army = this.state.armies[key];
+                if (army.visual && gsap.isTweening(army.visual)) {
+                    animating = true;
+                    break;
+                }
             }
         }
 
         moveIndex++;
         if (animating) {
-            setTimeout(executeMove, 400); // Wait for animation
+            setTimeout(executeMove, Config.ANIMATION.MOVE_WAIT); // Check again slightly after expected duration
         } else {
-            setTimeout(executeMove, 10); // Minimal delay
+            setTimeout(executeMove, Config.ANIMATION.MOVE_WAIT_MIN); // Minimal delay
         }
      };
 

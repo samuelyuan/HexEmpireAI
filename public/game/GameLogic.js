@@ -276,13 +276,25 @@ export class GameLogic {
         const sourceField = army.field;
         this.updateGameLog(`${this.state.parties[army.party].name} moved unit from (${sourceField.fx},${sourceField.fy}) to (${targetField.fx},${targetField.fy})`);
 
-        // Animation setup
-        army.anim = {
-            start: { x: sourceField._x, y: sourceField._y },
-            end: { x: targetField._x, y: targetField._y },
-            startTime: performance.now(),
-            duration: 300 
-        };
+        // GSAP Animation setup
+        if (!army.visual) army.visual = { x: sourceField._x, y: sourceField._y };
+        else { 
+            army.visual.x = sourceField._x; 
+            army.visual.y = sourceField._y; 
+        }
+
+        if (typeof gsap !== 'undefined') {
+            gsap.to(army.visual, {
+                x: targetField._x,
+                y: targetField._y,
+                duration: Config.ANIMATION.MOVE_DURATION,
+                ease: "power1.inOut"
+            });
+        } else {
+            // Fallback: Snap to target
+            army.visual.x = targetField._x;
+            army.visual.y = targetField._y;
+        }
 
         // Pact check
         if (this.state.peace >= 0) {
@@ -392,7 +404,8 @@ export class GameLogic {
                 waiting: null,
                 is_waiting: false,
                 _x: targetField._x,
-                _y: targetField._y
+                _y: targetField._y,
+                visual: { x: targetField._x, y: targetField._y }
             };
             if (army.morale > army.count) army.morale = army.count;
             if (army.morale < 0) army.morale = 0;

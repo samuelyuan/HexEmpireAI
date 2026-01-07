@@ -62,22 +62,8 @@ export class MapRender {
     const armies = Object.values(state.armies);
     // Sort by Y for correct occlusion
     armies.sort((a, b) => {
-        let ay = a.field._y;
-        let by = b.field._y;
-        if (a.anim) {
-             const now = performance.now();
-             let progress = (now - a.anim.startTime) / a.anim.duration;
-             if (progress < 0) progress = 0;
-             else if (progress > 1) progress = 1;
-             ay = a.anim.start.y + (a.anim.end.y - a.anim.start.y) * progress;
-        }
-        if (b.anim) {
-             const now = performance.now();
-             let progress = (now - b.anim.startTime) / b.anim.duration;
-             if (progress < 0) progress = 0;
-             else if (progress > 1) progress = 1;
-             by = b.anim.start.y + (b.anim.end.y - b.anim.start.y) * progress;
-        }
+        const ay = a.visual ? a.visual.y : a.field._y;
+        const by = b.visual ? b.visual.y : b.field._y;
         return ay - by;
     });
 
@@ -107,7 +93,7 @@ export class MapRender {
 
         // Movable Unit Highlight (Yellow Hex)
         let drawn = false;
-        if (field.army && !field.army.moved && field.army.party === state.humanPlayerId) {
+        if (state.turnParty === state.humanPlayerId && field.army && !field.army.moved && field.army.party === state.humanPlayerId) {
              this.drawHexTile(ctx, xCenter, yCenter, "rgba(255, 255, 0, 0.5)");
              drawn = true;
         }
@@ -252,23 +238,9 @@ export class MapRender {
 
   drawArmyUnit(ctx, army, state) {
     const field = army.field;
-    let xCenter = field._x; 
-    let yCenter = field._y;
-
-    if (army.anim) {
-        const now = performance.now();
-        let progress = (now - army.anim.startTime) / army.anim.duration;
-        if (progress < 0) progress = 0;
-        if (progress > 1) {
-             progress = 1;
-             delete army.anim;
-        } else {
-             const start = army.anim.start;
-             const end = army.anim.end;
-             xCenter = start.x + (end.x - start.x) * progress;
-             yCenter = start.y + (end.y - start.y) * progress;
-        }
-    }
+    // GSAP visual position or fallback to field position
+    let xCenter = army.visual ? army.visual.x : field._x;
+    let yCenter = army.visual ? army.visual.y : field._y;
 
     const unitData = this.getUnitRenderData(army);
     if (!unitData) return;
@@ -329,22 +301,9 @@ export class MapRender {
 
   drawArmyLabel(ctx, army, cursorPos, isGameRunning) {
     const field = army.field;
-    let xCenter = field._x;
-    let yCenter = field._y;
+    let xCenter = army.visual ? army.visual.x : field._x;
+    let yCenter = army.visual ? army.visual.y : field._y;
 
-    if (army.anim) {
-         // Use same interpolation for label
-         const now = performance.now();
-         let progress = (now - army.anim.startTime) / army.anim.duration;
-         if (progress > 1) progress = 1;
-         else if (progress < 0) progress = 0;
-         
-         const start = army.anim.start;
-         const end = army.anim.end;
-         xCenter = start.x + (end.x - start.x) * progress;
-         yCenter = start.y + (end.y - start.y) * progress;
-    }
-    
     const alpha = this.getOpacity(xCenter, yCenter, cursorPos, isGameRunning);
     if (alpha <= 0) return;
 
