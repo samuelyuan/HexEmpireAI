@@ -321,6 +321,11 @@ export class MapRender {
     const boxHeight = 18;
     
     const rgb = Config.COLORS.PARTY_RGB[army.party] || "0,0,0";
+    
+    // Mix faction color with black for less vivid appearance
+    const rgbValues = rgb.split(',').map(v => parseInt(v.trim()));
+    const mixFactor = 0.5; // 50% mix with black
+    const darkenedRgb = rgbValues.map(v => Math.floor(v * mixFactor)).join(',');
 
     // Box
     ctx.save();
@@ -333,7 +338,7 @@ export class MapRender {
       ctx.rect(xCenter - boxWidth/2, labelY - boxHeight/2, boxWidth, boxHeight);
     }
     // Background alpha is combined with globalAlpha
-    ctx.fillStyle = `rgba(${rgb}, 0.5)`; 
+    ctx.fillStyle = `rgba(${darkenedRgb}, 0.8)`; 
     ctx.fill();
     ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
     ctx.lineWidth = 1;
