@@ -10,6 +10,43 @@ $(function(){
   // canvas.style.width = '100%';
   // canvas.style.height = 'auto';
 
+  // Initialize modal explicitly
+  var modalElem = document.getElementById('countrySelectModal');
+  var modalInstance = M.Modal.init(modalElem);
+
+  // Populate country selection modal
+  const countrySelectGrid = document.getElementById('countrySelectGrid');
+  const factionNames = ["Redosia", "Violetnam", "Bluegaria", "Greenland"];
+  const capitalImages = ["capital_red.png", "capital_violet.png", "capital_blue.png", "capital_green.png"];
+  
+  factionNames.forEach((name, index) => {
+    const capitalItem = document.createElement('div');
+    capitalItem.className = 'capital-item selectable country-select';
+    capitalItem.setAttribute('data-country', index);
+    
+    const capitalIcon = document.createElement('img');
+    capitalIcon.className = 'capital-icon';
+    capitalIcon.src = `/images/${capitalImages[index]}`;
+    capitalIcon.alt = name;
+    
+    const capitalInfo = document.createElement('div');
+    capitalInfo.className = 'capital-info';
+    
+    const capitalName = document.createElement('div');
+    capitalName.className = 'capital-name';
+    capitalName.textContent = name;
+    
+    const capitalStats = document.createElement('div');
+    capitalStats.className = 'capital-stats';
+    capitalStats.textContent = 'Click to select';
+    
+    capitalInfo.appendChild(capitalName);
+    capitalInfo.appendChild(capitalStats);
+    capitalItem.appendChild(capitalIcon);
+    capitalItem.appendChild(capitalInfo);
+    countrySelectGrid.appendChild(capitalItem);
+  });
+
   const game = new Game();
   game.generateRandomMap();
 
@@ -35,40 +72,31 @@ $(function(){
   var randomMapButton = document.getElementById('randomMapButton');
   randomMapButton.onclick = function() {
     game.generateRandomMap();
+    // Update the input field with the new random map number
+    setTimeout(() => {
+      mapNumberInput.value = game.mapNumber;
+    }, 100);
   };
 
-  var startBattleButton = document.getElementById('startBattleButton');
-  startBattleButton.disabled = true; // Disable until map is loaded
+  var topBarStartBattle = document.getElementById('topBarStartBattle');
+  topBarStartBattle.disabled = true; // Disable until map is loaded
   
-  startBattleButton.onclick = function() {
-    var elem = document.getElementById('countrySelectModal');
-    var instance = M.Modal.getInstance(elem);
-    instance.open();
+  topBarStartBattle.onclick = function() {
+    modalInstance.open();
   };
 
   $('.country-select').click(function() {
     var country = $(this).data('country');
-    var elem = document.getElementById('countrySelectModal');
-    var instance = M.Modal.getInstance(elem);
-    instance.close();
+    modalInstance.close();
     
     let start = () => {
        mapNumberInput.value = game.mapNumber;
        mapNumberInput.disabled = true;
        changeMapButton.disabled = true;
        randomMapButton.disabled = true;
-       startBattleButton.disabled = true;
+       topBarStartBattle.style.display = 'none';
 
        game.setHumanPlayer(parseInt(country));
-       
-       var factionNames = ["Redosia", "Violetnam", "Bluegaria", "Greenland"];
-       var factionColors = ["red", "purple", "blue", "green"];
-       
-       var badge = document.getElementById('playerBadge');
-       badge.style.display = 'inline-block';
-       badge.className = "chip white-text " + factionColors[parseInt(country)];
-       document.getElementById('playerFactionName').innerText = factionNames[parseInt(country)];
-
        game.startBattle();
     };
 

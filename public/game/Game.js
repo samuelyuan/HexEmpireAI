@@ -140,6 +140,12 @@ export class Game {
      
      const startBtn = document.getElementById('startBattleButton');
      if (startBtn) startBtn.disabled = false;
+     
+     const topBarStartBtn = document.getElementById('topBarStartBattle');
+     if (topBarStartBtn) topBarStartBtn.disabled = false;
+
+     // Initialize top bar
+     this.initializeTopBar();
 
      // Initial Draw
      this.mapRender.drawMap(this.state, this.images);
@@ -209,6 +215,7 @@ export class Game {
     }
     
     this.updateMapStatus();
+    this.updateTopBar();
 
     // Skip eliminated parties
     if (this.state.parties[this.state.turnParty].status === 0) {
@@ -226,6 +233,7 @@ export class Game {
         // Human Turn
         this.humanMovesLeft = this.getMovePoints(currentParty.id);
         this.updateMapStatus();
+        this.updateTopBar();
 
         if (this.humanMovesLeft <= 0 || !this.checkHumanCanMove()) {
             this.endHumanTurn();
@@ -236,6 +244,12 @@ export class Game {
         if (endBtn) {
             endBtn.style.display = 'inline-block';
             endBtn.onclick = () => this.endHumanTurn();
+        }
+        
+        const topBarEndBtn = document.getElementById('topBarEndTurn');
+        if (topBarEndBtn) {
+            topBarEndBtn.style.display = 'inline-block';
+            topBarEndBtn.onclick = () => this.endHumanTurn();
         }
     }
   }
@@ -259,6 +273,9 @@ export class Game {
   endHumanTurn() {
       const endBtn = document.getElementById('endTurnButton');
       if (endBtn) endBtn.style.display = 'none';
+      
+      const topBarEndBtn = document.getElementById('topBarEndTurn');
+      if (topBarEndBtn) topBarEndBtn.style.display = 'none';
       
       this.logic.unitsSpawn(this.state.humanPlayerId);
       this.selectedArmy = null;
@@ -376,6 +393,7 @@ export class Game {
                   this.humanMovesLeft--;
                   this.selectedArmy = null;
                   this.updateMapStatus();
+                  this.updateTopBar();
                   this.logic.updateBoard();
                   this.drawGame();
                   
@@ -417,11 +435,18 @@ export class Game {
   }
 
   enableMenuControls() {
-      const ids = ['mapNumberInput', 'changeMapButton', 'randomMapButton', 'startBattleButton'];
+      const ids = ['mapNumberInput', 'changeMapButton', 'randomMapButton'];
       ids.forEach(id => {
           const el = document.getElementById(id);
           if (el) el.disabled = false;
       });
+      
+      // Show the Start Battle button again
+      const topBarStartBattle = document.getElementById('topBarStartBattle');
+      if (topBarStartBattle) {
+          topBarStartBattle.style.display = 'inline-block';
+          topBarStartBattle.disabled = false;
+      }
   }
 
   getMousePos(canvas, event) {
@@ -469,5 +494,99 @@ export class Game {
       }
     }
     return bestField;
+  }
+
+  initializeTopBar() {
+    const capitalsSection = document.getElementById('capitalsSection');
+    if (!capitalsSection) return;
+
+    // Clear existing content
+    capitalsSection.innerHTML = '';
+
+    // Create capital items for each party
+    for (let i = 0; i < this.state.parties.length; i++) {
+      const party = this.state.parties[i];
+      const capitalItem = document.createElement('div');
+      capitalItem.className = 'capital-item';
+      capitalItem.id = `capital-item-${i}`;
+
+      const capitalIcon = document.createElement('img');
+      capitalIcon.className = 'capital-icon';
+      capitalIcon.src = `/images/${Config.IMAGES.CAPITALS[i]}`;
+      capitalIcon.alt = party.name;
+
+      const capitalInfo = document.createElement('div');
+      capitalInfo.className = 'capital-info';
+
+      const capitalName = document.createElement('div');
+      capitalName.className = 'capital-name';
+      capitalName.textContent = party.name;
+
+      const capitalStats = document.createElement('div');
+      capitalStats.className = 'capital-stats';
+      capitalStats.id = `capital-stats-${i}`;
+      capitalStats.textContent = 'Armies: 0 | Power: 0';
+
+      capitalInfo.appendChild(capitalName);
+      capitalInfo.appendChild(capitalStats);
+      capitalItem.appendChild(capitalIcon);
+      capitalItem.appendChild(capitalInfo);
+      capitalsSection.appendChild(capitalItem);
+    }
+
+    // Show the top bar
+    const topBar = document.getElementById('gameTopBar');
+    if (topBar) topBar.classList.add('active');
+
+    // Update initial stats
+    this.updateTopBar();
+  }
+
+  updateTopBar() {
+    if (!this.state) return;
+
+    // Update turn indicator
+    const turnIndicator = document.getElementById('turnIndicator');
+    if (turnIndicator) {
+      turnIndicator.textContent = `Turn ${this.state.turn + 1}`;
+    }
+
+    // Update each capital item
+    for (let i = 0; i < this.state.parties.length; i++) {
+      const party = this.state.parties[i];
+      const capitalItem = document.getElementById(`capital-item-${i}`);
+      const capitalStats = document.getElementById(`capital-stats-${i}`);
+
+      if (!capitalItem || !capitalStats) continue;
+
+      // Update stats
+      const armyCount = party.armies.length;
+      const totalPower = party.totalPower || 0;
+      capitalStats.textContent = `Armies: ${armyCount} | Power: ${totalPower}`;
+
+      // Update active state
+      if (this.state.turnParty === i && party.status === 1) {
+        capitalItem.classList.add('active');
+      } else {
+        capitalItem.classList.remove('active');
+      }
+
+      // Update eliminated state
+      if (party.status === 0) {
+        capitalItem.classList.add('eliminated');
+      } else {
+        capitalItem.classList.remove('eliminated');
+      }
+    }
+
+    // Update button visibility
+    const topBarEndTurn = document.getElementById('topBarEndTurn');
+    const endTurnButton = document.getElementById('endTurnButton');
+    
+    if (this.state.turnParty === this.state.humanPlayerId && this.state.humanPlayerId >= 0) {
+      if (topBarEndTurn) topBarEndTurn.style.display = 'inline-block';
+    } else {
+      if (topBarEndTurn) topBarEndTurn.style.display = 'none';
+    }
   }
 }

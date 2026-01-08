@@ -17,6 +17,8 @@
     body {
       background-color: #1e1e1e;
       color: #e0e0e0;
+      margin: 0;
+      padding: 0;
     }
     .gamelog {
       overflow-y: scroll;
@@ -80,6 +82,227 @@
         width: 80%;
         max-width: 1400px;
     }
+
+    /* Top Bar Styles */
+    #gameTopBar {
+      background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
+      border: 2px solid #444;
+      border-bottom: 3px solid #444;
+      padding: 12px 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      display: none;
+      margin-bottom: 0;
+      border-radius: 8px 8px 0 0;
+    }
+    #gameTopBar.active {
+      display: block;
+    }
+    .top-bar-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .capitals-section {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex: 1;
+    }
+    .capital-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 15px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .capital-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.1) 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .capital-item:hover::before {
+      opacity: 1;
+    }
+    .capital-item.active {
+      border-color: #ffd700;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    .capital-item.eliminated {
+      opacity: 0.4;
+      filter: grayscale(100%);
+    }
+    @keyframes pulse {
+      0%, 100% {
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+      }
+      50% {
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.7);
+      }
+    }
+    .capital-icon {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    }
+    .capital-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .capital-name {
+      font-weight: bold;
+      font-size: 14px;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    }
+    .capital-stats {
+      font-size: 11px;
+      color: #aaa;
+      font-family: 'Roboto Condensed', sans-serif;
+    }
+    .controls-section {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .game-control-btn {
+      padding: 10px 20px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      font-size: 13px;
+    }
+    .game-control-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+    }
+    .game-control-btn:active {
+      transform: translateY(0);
+    }
+    .game-control-btn.start-battle {
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+      color: white;
+    }
+    .game-control-btn.end-turn {
+      background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+      color: white;
+    }
+    .game-control-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .turn-indicator {
+      padding: 10px 20px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 14px;
+      color: #ffd700;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      border: 1px solid rgba(255,215,0,0.3);
+    }
+    .map-controls-section {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .map-controls-section input {
+      width: 70px;
+      padding: 5px 8px;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid #666;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 12px;
+      font-family: 'Roboto Condensed', monospace;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+    .map-controls-section input:focus {
+      outline: none;
+      border-color: #4CAF50;
+      background: rgba(0,0,0,0.5);
+      box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
+    }
+    .map-controls-section input::placeholder {
+      color: #777;
+      font-size: 11px;
+    }
+    .map-control-btn {
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 4px;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .map-control-btn:hover {
+      background: rgba(255,255,255,0.15);
+      border-color: rgba(255,255,255,0.3);
+    }
+    .map-control-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    canvas {
+        max-width: 100%;
+        height: auto;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        border: 2px solid #333;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        background-color: #000;
+    }
+    
+    /* Selectable Capital Items in Modal */
+    .capital-item.selectable {
+      cursor: pointer;
+      padding: 15px 20px;
+    }
+    .capital-item.selectable:hover {
+      border-color: #4CAF50;
+      box-shadow: 0 0 25px rgba(76, 175, 80, 0.5);
+      transform: scale(1.05);
+    }
+    .capital-item.selectable .capital-icon {
+      width: 48px;
+      height: 48px;
+    }
+    .capital-item.selectable .capital-name {
+      font-size: 16px;
+    }
+    .capital-item.selectable .capital-stats {
+      font-size: 12px;
+      color: #999;
+    }
   </style>
 </head>
 
@@ -94,30 +317,25 @@
     <div class="section">
       <div class="row">
         <div class="col s12">
-          <div class="row">
-             <div class="input-field col s12 m4">
-                <input id="mapNumberInput" type="text" placeholder="Enter map number">
-                <label for="mapNumberInput">Map #</label>
-             </div>
-             <div class="col s12 m8 valign-wrapper" style="height: 80px;">
-                <button type="button" class="waves-effect waves-light btn blue darken-3" id="changeMapButton">Change Map</button>
-                <button type="button" class="waves-effect waves-light btn blue" id="randomMapButton" style="margin-left: 10px;">Random</button>
-                <button type="button" class="waves-effect waves-light btn green" id="startBattleButton" style="margin-left: 10px;">Start Battle</button>
-                <button type="button" class="waves-effect waves-light btn orange" id="endTurnButton" style="display:none; margin-left: 10px;">End Turn</button>
-             </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col s12">
-           <div class="valign-wrapper">
-             <h5 id="mapStatus" style="margin-right: 15px;">Map, Turn 1</h5>
-             <div id="playerBadge" class="chip" style="display:none;">
-                Playing as: <b id="playerFactionName">Faction</b>
+           <!-- Game Top Bar -->
+           <div id="gameTopBar">
+             <div class="top-bar-content">
+               <div class="map-controls-section">
+                 <input id="mapNumberInput" type="text" placeholder="Map #">
+                 <button type="button" class="map-control-btn" id="changeMapButton">Change</button>
+                 <button type="button" class="map-control-btn" id="randomMapButton">Random</button>
+               </div>
+               <div class="capitals-section" id="capitalsSection">
+                 <!-- Capital items will be dynamically inserted here -->
+               </div>
+               <div class="controls-section">
+                 <div class="turn-indicator" id="turnIndicator">Turn 1</div>
+                 <button type="button" class="game-control-btn start-battle" id="topBarStartBattle">Start Battle</button>
+                 <button type="button" class="game-control-btn end-turn" id="topBarEndTurn" style="display:none;">End Turn</button>
+               </div>
              </div>
            </div>
-           <div class="card-panel center-align">
+           <div class="card-panel center-align" style="padding: 0; margin: 0;">
               <canvas id="map" width="1540" height="960"></canvas>
            </div>
         </div>
@@ -139,13 +357,10 @@
   <!-- Country Selection Modal -->
   <div id="countrySelectModal" class="modal">
     <div class="modal-content">
-      <h4>Choose Your Country</h4>
-      <p>Select a country to lead to victory:</p>
-      <div class="row center-align">
-         <button class="waves-effect waves-light btn red country-select" data-country="0">Redosia</button>
-         <button class="waves-effect waves-light btn purple country-select" data-country="1">Violetnam</button>
-         <button class="waves-effect waves-light btn blue country-select" data-country="2">Bluegaria</button>
-         <button class="waves-effect waves-light btn green country-select" data-country="3">Greenland</button>
+      <h4 style="text-align: center; margin-bottom: 10px;">Choose Your Country</h4>
+      <p style="text-align: center; color: #aaa; margin-bottom: 30px;">Select a faction to lead to victory</p>
+      <div id="countrySelectGrid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 500px; margin: 0 auto;">
+        <!-- Country items will be dynamically inserted here -->
       </div>
     </div>
   </div>
