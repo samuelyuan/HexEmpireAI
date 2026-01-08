@@ -76,48 +76,63 @@ export class Animations {
 
         const tl = gsap.timeline();
 
-        // 1. Attacker lunges forward
+        // 1. Attacker lunges forward with slight scale increase
         const dx = defenderOrigX - attackerOrigX;
         const dy = defenderOrigY - attackerOrigY;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        const lungeDistance = distance * 0.3;
+        const lungeDistance = distance * 0.35;
         const lungeX = attackerOrigX + (dx / distance) * lungeDistance;
         const lungeY = attackerOrigY + (dy / distance) * lungeDistance;
 
         tl.to(attacker.visual, {
             x: lungeX,
             y: lungeY,
-            duration: Config.ANIMATION.ATTACK_DURATION * 0.4,
-            ease: "power2.out"
+            scale: Config.ANIMATION.ATTACK_LUNGE_SCALE,
+            duration: Config.ANIMATION.ATTACK_LUNGE_DURATION,
+            ease: "power3.out"
         }, 0);
 
-        // 2. Defender shakes on impact
+        // 2. Impact - defender recoils and both flash briefly
         tl.to(defender.visual, {
-            x: defenderOrigX + Config.ANIMATION.ATTACK_SHAKE,
-            yoyo: true,
-            repeat: 3,
-            duration: 0.05,
-            ease: "none"
-        }, Config.ANIMATION.ATTACK_DURATION * 0.4);
+            x: defenderOrigX + (dx / distance) * Config.ANIMATION.ATTACK_RECOIL_DISTANCE,
+            y: defenderOrigY + (dy / distance) * Config.ANIMATION.ATTACK_RECOIL_DISTANCE,
+            scale: 0.9,
+            duration: Config.ANIMATION.ATTACK_IMPACT_DURATION,
+            ease: "power2.out"
+        }, Config.ANIMATION.ATTACK_LUNGE_DURATION);
 
-        // 3. Attacker returns to position
+        tl.to([attacker.visual, defender.visual], {
+            opacity: 0.6,
+            duration: Config.ANIMATION.ATTACK_IMPACT_DURATION * 0.3,
+            ease: "none"
+        }, Config.ANIMATION.ATTACK_LUNGE_DURATION);
+
+        // 3. Defender bounces back
+        tl.to(defender.visual, {
+            x: defenderOrigX,
+            y: defenderOrigY,
+            scale: 1,
+            duration: Config.ANIMATION.ATTACK_IMPACT_DURATION * 0.8,
+            ease: "elastic.out(1.5, 0.3)"
+        }, Config.ANIMATION.ATTACK_LUNGE_DURATION + Config.ANIMATION.ATTACK_IMPACT_DURATION);
+
+        // 4. Attacker returns smoothly
         tl.to(attacker.visual, {
             x: attackerOrigX,
             y: attackerOrigY,
-            duration: Config.ANIMATION.ATTACK_DURATION * 0.6,
-            ease: "power2.in"
-        }, Config.ANIMATION.ATTACK_DURATION * 0.4);
+            scale: 1,
+            duration: Config.ANIMATION.ATTACK_RETURN_DURATION,
+            ease: "power2.inOut"
+        }, Config.ANIMATION.ATTACK_LUNGE_DURATION + Config.ANIMATION.ATTACK_IMPACT_DURATION * 0.3);
 
-        // 4. Both units flash (impact effect)
+        // 5. Restore opacity
         tl.to([attacker.visual, defender.visual], {
-            opacity: 0.3,
-            yoyo: true,
-            repeat: 1,
-            duration: 0.1,
+            opacity: 1,
+            duration: Config.ANIMATION.ATTACK_IMPACT_DURATION,
             ease: "none"
-        }, Config.ANIMATION.ATTACK_DURATION * 0.4);
+        }, Config.ANIMATION.ATTACK_LUNGE_DURATION + Config.ANIMATION.ATTACK_IMPACT_DURATION);
 
-        // 5. Reset both units to normal state after animation
+        // 6. Reset all properties to ensure clean state
         tl.set([attacker.visual, defender.visual], {
             x: (index) => index === 0 ? attackerOrigX : defenderOrigX,
             y: (index) => index === 0 ? attackerOrigY : defenderOrigY,
@@ -145,28 +160,39 @@ export class Animations {
 
         const tl = gsap.timeline();
 
-        // 1. Rapid shake
+        // 1. Brief compression before explosion
         tl.to(army.visual, {
-            x: origX + Config.ANIMATION.ATTACK_SHAKE * 2,
-            yoyo: true,
-            repeat: 5,
-            duration: 0.04,
+            scale: 0.85,
+            duration: Config.ANIMATION.EXPLOSION_COMPRESS_DURATION,
+            ease: "power2.in"
+        }, 0);
+
+        // 2. Quick fade during compression
+        tl.to(army.visual, {
+            opacity: 0.7,
+            duration: Config.ANIMATION.EXPLOSION_COMPRESS_DURATION,
             ease: "none"
         }, 0);
 
-        // 2. Scale up and fade out (explosion effect)
+        // 3. Rapid expansion and fade out (explosion effect)
         tl.to(army.visual, {
-            scale: 2,
+            scale: Config.ANIMATION.EXPLOSION_SCALE,
             opacity: 0,
-            rotation: 180,
-            duration: Config.ANIMATION.EXPLOSION_DURATION,
-            ease: "power2.out"
-        }, 0.2);
+            duration: Config.ANIMATION.EXPLOSION_EXPAND_DURATION,
+            ease: "power3.out"
+        }, Config.ANIMATION.EXPLOSION_COMPRESS_DURATION);
 
-        // 3. Reset properties after animation
+        // 4. Subtle rotation during explosion
+        tl.to(army.visual, {
+            rotation: 45,
+            duration: Config.ANIMATION.EXPLOSION_EXPAND_DURATION,
+            ease: "power1.out"
+        }, Config.ANIMATION.EXPLOSION_COMPRESS_DURATION);
+
+        // 5. Keep unit hidden after explosion (don't reset opacity to 1)
         tl.set(army.visual, {
             scale: 1,
-            opacity: 1,
+            opacity: 0,
             rotation: 0,
             x: origX,
             y: origY

@@ -39,9 +39,14 @@ export const Config = {
         MOVE_WAIT_MIN: 50,
         MERGE_DURATION: 0.4,
         MERGE_SCALE: 1.3,
-        ATTACK_DURATION: 0.3,
-        ATTACK_SHAKE: 8,
-        EXPLOSION_DURATION: 0.6
+        ATTACK_LUNGE_DURATION: 0.3,
+        ATTACK_IMPACT_DURATION: 0.2,
+        ATTACK_RETURN_DURATION: 0.35,
+        ATTACK_LUNGE_SCALE: 1.15,
+        ATTACK_RECOIL_DISTANCE: 5,
+        EXPLOSION_COMPRESS_DURATION: 0.2,
+        EXPLOSION_EXPAND_DURATION: 0.5,
+        EXPLOSION_SCALE: 1.4
     },
     IMAGES: {
         GRASS_BG: { prefix: 'l_', count: 6 },
