@@ -234,6 +234,19 @@ export class Game {
       }
     }
 
+    // Check Global Game End (Spectator Mode or AI vs AI)
+    if (this.state.isSpectating) {
+        let activeParties = [];
+        for(const p of this.state.parties) {
+            if (p.status > 0) activeParties.push(p);
+        }
+        
+        if (activeParties.length === 1) {
+            this.showGameEndModal('spectator_victory', activeParties[0].name);
+            return;
+        }
+    }
+
     // Skip eliminated parties
     if (this.state.parties[this.state.turnParty].status === 0) {
         this.nextTurn();
@@ -610,7 +623,7 @@ export class Game {
     }
   }
 
-  showGameEndModal(type) {
+  showGameEndModal(type, winnerName) {
     const modal = document.getElementById('gameEndModal');
     if (!modal) return;
 
@@ -627,6 +640,21 @@ export class Game {
         <button type="button" class="game-control-btn start-battle" id="playAgainButton" style="width: 100%; padding: 15px;">
           <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">replay</i>
           Play Again
+        </button>
+        <button type="button" class="game-control-btn" id="newMapButton" style="width: 100%; padding: 15px; background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);">
+          <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">map</i>
+          New Map
+        </button>
+      `;
+    } else if (type === 'spectator_victory') {
+      title.textContent = 'Game Over';
+      title.style.color = '#ffd700';
+      message.textContent = `${winnerName} has conquered the world!`;
+      
+      buttonsContainer.innerHTML = `
+        <button type="button" class="game-control-btn start-battle" id="playAgainButton" style="width: 100%; padding: 15px;">
+          <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">replay</i>
+          Restart Map
         </button>
         <button type="button" class="game-control-btn" id="newMapButton" style="width: 100%; padding: 15px; background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);">
           <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">map</i>
@@ -660,7 +688,7 @@ export class Game {
   }
 
   setupGameEndButtons(type) {
-    if (type === 'victory') {
+    if (type === 'victory' || type === 'spectator_victory') {
       const playAgainButton = document.getElementById('playAgainButton');
       if (playAgainButton) {
         playAgainButton.onclick = () => this.restartSameMap();

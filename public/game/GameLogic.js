@@ -70,10 +70,19 @@ export class GameLogic {
 
                 // 1. Transfer Land Ownership if Faction is Dead
                 if (field.party >= 0) {
-                    const landOwner = this.state.parties[field.party];
-                    if (landOwner.status === 0) {
-                        // Transfer to the one who owns their capital
-                        field.party = landOwner.capital.party;
+                    let landOwner = this.state.parties[field.party];
+                    // Recursively resolve ownership if the owner is dead (and doesn't own their capital)
+                    // We loop until we find a living owner or the ultimate conqueror
+                    while (landOwner.status === 0 && landOwner.capital.party !== landOwner.id) {
+                         const nextOwnerId = landOwner.capital.party;
+                         // Cycle protection
+                         if (nextOwnerId === landOwner.id || nextOwnerId === field.party) break; 
+                         
+                         landOwner = this.state.parties[nextOwnerId];
+                    }
+                    
+                    if (field.party !== landOwner.id) {
+                        field.party = landOwner.id;
                     }
                 }
 
@@ -81,6 +90,7 @@ export class GameLogic {
                 if (field.army) {
                     const armyPartyId = field.army.party;
                     if (this.state.parties[armyPartyId].status === 0) {
+                        Animations.animateExplosion(field.army); // Add visual animation
                         this.setExplosion(field.army, field.army, null);
                         this.updateGameLog(`Disbanded ${this.state.parties[armyPartyId].name} army at (${field.fx}, ${field.fy})`);
                         // field.army will be removed by cleanupArmies in next tick
@@ -416,7 +426,7 @@ export class GameLogic {
 
     setExplosion(attacking, exploding, waiting) {
         attacking.exploding = exploding;
-        exploding.remove_time = 36; // Frames?
+        exploding.remove_time = 36; 
         if (waiting) {
             attacking.waiting = waiting;
             waiting.is_waiting = true;
@@ -461,6 +471,7 @@ export class GameLogic {
                      for (const cap of originalOwner.provincesCp) {
                          // Liberate
                          if (cap.army) {
+                             Animations.animateExplosion(cap.army);
                              this.setExplosion(cap.army, cap.army, null);
                              cap.army = null;
                          }
