@@ -51,6 +51,7 @@ export class GameState {
         this.pactJustBroken = -1;
 
         this.humanCondition = 1;
+        this.isSpectating = false; // True when player is defeated and watching AI battle
 
         // Canvases
         this.backgroundCanvas = null;

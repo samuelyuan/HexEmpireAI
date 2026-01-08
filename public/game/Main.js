@@ -100,11 +100,7 @@ $(function(){
        game.startBattle();
     };
 
-    if (game.isVictory()) {
-       game.generateNewMap(game.mapNumber).then(start);
-    } else {
-       start();
-    }
+    start();
   });
 
   // Re-draw on resize to prevent blank screen

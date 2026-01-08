@@ -208,7 +208,7 @@ export class Game {
       this.state.turn++;
       this.logic.updateGameLog("Turn " + (this.state.turn + 1));
 
-      if (this.state.turn >= 150 || this.isVictory()) {
+      if (this.state.turn >= 150) {
          this.enableMenuControls();
          return;
       }
@@ -216,6 +216,23 @@ export class Game {
     
     this.updateMapStatus();
     this.updateTopBar();
+
+    // Check game end conditions for human player
+    if (this.state.humanPlayerId >= 0 && !this.state.isSpectating) {
+      const humanParty = this.state.parties[this.state.humanPlayerId];
+      
+      // Check defeat
+      if (humanParty.status === 0) {
+        this.showGameEndModal('defeat');
+        return;
+      }
+      
+      // Check victory
+      if (humanParty.provincesCp && humanParty.provincesCp.length === this.state.parties.length - 1) {
+        this.showGameEndModal('victory');
+        return;
+      }
+    }
 
     // Skip eliminated parties
     if (this.state.parties[this.state.turnParty].status === 0) {
@@ -385,8 +402,6 @@ export class Game {
           const possibleMoves = this.pathfinder.getPossibleMoves(this.selectedArmy.field, true, false);
           if (possibleMoves.includes(field)) {
               // Execute Move
-              // Logic returns success boolean? Original did. My logic updates state.
-              // My logic returns boolean (true if moved, false if failed combat?)
               const success = this.logic.moveArmy(this.selectedArmy, field);
               
               if (success) {
@@ -396,6 +411,19 @@ export class Game {
                   this.updateTopBar();
                   this.logic.updateBoard();
                   this.drawGame();
+                  
+                  // Check for immediate victory after move
+                  if (this.state.humanPlayerId >= 0) {
+                    const humanParty = this.state.parties[this.state.humanPlayerId];
+                    if (humanParty.provincesCp && humanParty.provincesCp.length === this.state.parties.length - 1) {
+                      // Hide end turn button before showing victory
+                      const topBarEndTurn = document.getElementById('topBarEndTurn');
+                      if (topBarEndTurn) topBarEndTurn.style.display = 'none';
+                      
+                      this.showGameEndModal('victory');
+                      return;
+                    }
+                  }
                   
                   if (this.humanMovesLeft <= 0 || !this.checkHumanCanMove()) {
                       this.endHumanTurn();
@@ -425,14 +453,6 @@ export class Game {
       }
   }
 
-  isVictory() {
-      for (const p of this.state.parties) {
-          if (p.provincesCp && p.provincesCp.length === this.state.parties.length - 1) {
-              return true;
-          }
-      }
-      return false;
-  }
 
   enableMenuControls() {
       const ids = ['mapNumberInput', 'changeMapButton', 'randomMapButton'];
@@ -587,6 +607,132 @@ export class Game {
       if (topBarEndTurn) topBarEndTurn.style.display = 'inline-block';
     } else {
       if (topBarEndTurn) topBarEndTurn.style.display = 'none';
+    }
+  }
+
+  showGameEndModal(type) {
+    const modal = document.getElementById('gameEndModal');
+    if (!modal) return;
+
+    const title = document.getElementById('gameEndTitle');
+    const message = document.getElementById('gameEndMessage');
+    const buttonsContainer = document.getElementById('gameEndButtons');
+
+    if (type === 'victory') {
+      title.textContent = 'Victory!';
+      title.style.color = '#4CAF50';
+      message.textContent = 'You have conquered all enemy capitals and achieved total domination!';
+      
+      buttonsContainer.innerHTML = `
+        <button type="button" class="game-control-btn start-battle" id="playAgainButton" style="width: 100%; padding: 15px;">
+          <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">replay</i>
+          Play Again
+        </button>
+        <button type="button" class="game-control-btn" id="newMapButton" style="width: 100%; padding: 15px; background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);">
+          <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">map</i>
+          New Map
+        </button>
+      `;
+    } else {
+      title.textContent = 'Your Capital Has Fallen!';
+      title.style.color = '#ff5252';
+      message.textContent = 'Your empire has been defeated. What would you like to do?';
+      
+      buttonsContainer.innerHTML = `
+        <button type="button" class="game-control-btn start-battle" id="restartSameMapButton" style="width: 100%; padding: 15px;">
+          <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">refresh</i>
+          Restart with Same Map
+        </button>
+        <button type="button" class="game-control-btn" id="spectateButton" style="width: 100%; padding: 15px; background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);">
+          <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">visibility</i>
+          Watch AI Battle Continue
+        </button>
+      `;
+    }
+
+    const modalInstance = M.Modal.init(modal, {
+      dismissible: false
+    });
+    modalInstance.open();
+
+    // Wire up button handlers
+    this.setupGameEndButtons(type);
+  }
+
+  setupGameEndButtons(type) {
+    if (type === 'victory') {
+      const playAgainButton = document.getElementById('playAgainButton');
+      if (playAgainButton) {
+        playAgainButton.onclick = () => this.restartSameMap();
+      }
+
+      const newMapButton = document.getElementById('newMapButton');
+      if (newMapButton) {
+        newMapButton.onclick = () => this.startNewRandomMap();
+      }
+    } else {
+      const restartButton = document.getElementById('restartSameMapButton');
+      if (restartButton) {
+        restartButton.onclick = () => this.restartSameMap();
+      }
+
+      const spectateButton = document.getElementById('spectateButton');
+      if (spectateButton) {
+        spectateButton.onclick = () => this.enterSpectatorMode();
+      }
+    }
+  }
+
+  restartSameMap() {
+    this.closeGameEndModal();
+    if (this.state) {
+      this.state.isSpectating = false;
+    }
+    
+    // Re-enable menu controls
+    this.enableMenuControls();
+    
+    // Regenerate the same map
+    this.generateNewMap(this.mapNumber);
+  }
+
+  startNewRandomMap() {
+    this.closeGameEndModal();
+    if (this.state) {
+      this.state.isSpectating = false;
+    }
+    
+    // Re-enable menu controls
+    this.enableMenuControls();
+    
+    // Generate new map
+    this.generateRandomMap();
+  }
+
+  enterSpectatorMode() {
+    this.closeGameEndModal();
+    
+    if (this.state) {
+      this.state.isSpectating = true;
+      
+      if (this.state.humanPlayerId >= 0) {
+        this.state.parties[this.state.humanPlayerId].control = "computer";
+      }
+
+      const topBarEndTurn = document.getElementById('topBarEndTurn');
+      if (topBarEndTurn) topBarEndTurn.style.display = 'none';
+
+      this.selectedArmy = null;
+      this.drawGame();
+      this.nextTurn();
+    }
+  }
+
+  closeGameEndModal() {
+    const modal = document.getElementById('gameEndModal');
+    if (modal) {
+      const modalInstance = M.Modal.getInstance(modal);
+      if (modalInstance) modalInstance.close();
     }
   }
 }
