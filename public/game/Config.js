@@ -23,7 +23,7 @@ export const Config = {
     UNITS: {
         MAX_COUNT: 99,
         SCALE: {
-            INFANTRY: 0.07,
+            INFANTRY: 0.09,
             ARTILLERY: 0.12,
             TANK: 0.13,
             WARSHIP: 0.13,
