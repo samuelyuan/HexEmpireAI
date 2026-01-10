@@ -1,5 +1,5 @@
 {
-  "name": "HexEmpireAI",
+  "name": "OpenHexEmpire",
   "version": "1.0.0",
   "description": "Hex Empire AI Battle",
   "main": "server.js",
@@ -16,12 +16,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/samuelyuan/HexEmpireAI.git"
+    "url": "git+https://github.com/zsabakh/OpenHexEmpire.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/samuelyuan/HexEmpireAI/issues"
+    "url": "https://github.com/zsabakh/OpenHexEmpire/issues"
   },
-  "homepage": "https://github.com/samuelyuan/HexEmpireAI#readme"
+  "homepage": "https://github.com/zsabakh/OpenHexEmpire#readme"
 }
