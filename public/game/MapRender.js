@@ -85,13 +85,37 @@ export class MapRender {
   }
 
   drawGridAndTerritory(ctx, state) {
+     // Pass 1: Town Backgrounds (can spill over)
      for (let x = 0; x < state.width; x++) {
       for (let y = 0; y < state.height; y++) {
         const field = state.getField(x, y);
         const xCenter = field._x;
         const yCenter = field._y;
 
-        // Movable Unit Highlight (Yellow Hex)
+        if (field.estate === "town") {
+             const idx = ((field.fx * 7 + field.fy * 13) % 6) + 1;
+             const bgImg = this.images["townBgGrass" + idx] ? this.images["townBgGrass" + idx].img : null;
+             
+             if (bgImg) {
+                 ctx.save();
+                 const scale = Config.IMAGES.TOWN_BG_SCALE || 0.6;
+                 const w = bgImg.width * scale; 
+                 const h = bgImg.height * scale;
+                 ctx.drawImage(bgImg, xCenter - w/2, yCenter - h/2, w, h);
+                 ctx.restore();
+             }
+        }
+      }
+     }
+
+     // Pass 2: Grid & Territory Tint
+     for (let x = 0; x < state.width; x++) {
+      for (let y = 0; y < state.height; y++) {
+        const field = state.getField(x, y);
+        const xCenter = field._x;
+        const yCenter = field._y;
+
+        // Movable Unit Highlight
         let drawn = false;
         if (state.turnParty === state.humanPlayerId && field.army && !field.army.moved && field.army.party === state.humanPlayerId) {
              this.drawHexTile(ctx, xCenter, yCenter, "rgba(255, 255, 0, 0.5)");
@@ -110,8 +134,16 @@ export class MapRender {
 
         // Grid Outline
         this.drawHexOutline(ctx, xCenter, yCenter, "rgba(0,0,0,0.2)", 0.5);
+      }
+     }
 
-        // Cities/Ports
+     // Pass 3: Icons (Cities/Ports) - Drawn last to be on top
+     for (let x = 0; x < state.width; x++) {
+      for (let y = 0; y < state.height; y++) {
+        const field = state.getField(x, y);
+        const xCenter = field._x;
+        const yCenter = field._y;
+
         if (field.estate === "town") {
           const isCapital = field.capital >= 0;
           const cityImg = isCapital ? this.images["capital" + field.capital].img : this.images.city.img;
@@ -143,7 +175,7 @@ export class MapRender {
           }
         }
       }
-    }
+     }
   }
 
   drawTerritoryBorders(ctx, state) {

@@ -53,6 +53,7 @@ export const Config = {
         SEA_BG: { prefix: 'm_', count: 6 },
         TOWN_BG_GRASS: { prefix: 'c_', count: 6 },
         TOWN_BG_DIRT: { prefix: 'cd_', count: 6 },
+        TOWN_BG_SCALE: 0.2,
         CITY: 'city.png',
         PORT: 'port.png',
         CAPITALS: ['capital_red.png', 'capital_violet.png', 'capital_blue.png', 'capital_green.png'],

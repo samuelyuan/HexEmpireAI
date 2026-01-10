@@ -139,6 +139,11 @@ export class Game {
          mapStatus.innerHTML = `<b>Map</b> ${mapNumber}, <b>Turn</b> ${this.state.turn + 1}`;
      }
      
+     const mapNumberInput = document.getElementById('mapNumberInput');
+     if (mapNumberInput) {
+         mapNumberInput.value = mapNumber;
+     }
+     
      const startBtn = document.getElementById('startBattleButton');
      if (startBtn) startBtn.disabled = false;
      
