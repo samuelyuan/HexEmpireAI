@@ -19,6 +19,7 @@ export class Game {
     this.selectedArmy = null;
     this.hoveredField = null;
     this.cursorPos = { x: 0, y: 0 };
+    this.totalMovesForTurn = 0;
     
     // Animation Loop
     this.lastTime = 0;
@@ -261,7 +262,8 @@ export class Game {
         this.runComputerTurn(currentParty.id);
     } else {
         // Human Turn
-        this.humanMovesLeft = this.getMovePoints(currentParty.id);
+        this.totalMovesForTurn = this.getMovePoints(currentParty.id);
+        this.humanMovesLeft = this.totalMovesForTurn;
         this.updateMapStatus();
         this.updateTopBar();
 
@@ -615,11 +617,17 @@ export class Game {
     // Update button visibility
     const topBarEndTurn = document.getElementById('topBarEndTurn');
     const endTurnButton = document.getElementById('endTurnButton');
+    const moveCounter = document.getElementById('moveCounter');
     
     if (this.state.turnParty === this.state.humanPlayerId && this.state.humanPlayerId >= 0) {
       if (topBarEndTurn) topBarEndTurn.style.display = 'inline-block';
+      if (moveCounter) {
+          moveCounter.style.display = 'block';
+          moveCounter.textContent = `Moves: ${this.humanMovesLeft} / ${this.totalMovesForTurn}`;
+      }
     } else {
       if (topBarEndTurn) topBarEndTurn.style.display = 'none';
+      if (moveCounter) moveCounter.style.display = 'none';
     }
   }
 

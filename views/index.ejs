@@ -212,15 +212,29 @@
       cursor: not-allowed;
       transform: none;
     }
-    .turn-indicator {
-      padding: 10px 20px;
+    .turn-status-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
       background: rgba(255,255,255,0.1);
       border-radius: 6px;
+      padding: 6px 15px;
+      border: 1px solid rgba(255,215,0,0.3);
+      min-width: 100px;
+    }
+    .turn-indicator {
       font-weight: bold;
       font-size: 14px;
       color: #ffd700;
       text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-      border: 1px solid rgba(255,215,0,0.3);
+      line-height: 1.2;
+    }
+    .move-counter {
+      font-size: 11px;
+      color: #aaa;
+      font-family: 'Roboto Condensed', sans-serif;
+      letter-spacing: 0.5px;
     }
     .map-controls-section {
       display: flex;
@@ -329,7 +343,10 @@
                  <!-- Capital items will be dynamically inserted here -->
                </div>
                <div class="controls-section">
-                 <div class="turn-indicator" id="turnIndicator">Turn 1</div>
+                 <div class="turn-status-wrapper">
+                    <div class="turn-indicator" id="turnIndicator">Turn 1</div>
+                    <div class="move-counter" id="moveCounter" style="display:none;">Moves: -/-</div>
+                 </div>
                  <button type="button" class="game-control-btn start-battle" id="topBarStartBattle">Start Battle</button>
                  <button type="button" class="game-control-btn end-turn" id="topBarEndTurn" style="display:none;">End Turn</button>
                </div>
