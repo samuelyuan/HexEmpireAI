@@ -9,7 +9,7 @@ class Map {
       this.mapNumber = Math.floor(Math.random() * 999999);
     }
     this.resetGameLog();
-    this.updateGameLog("Map #" + this.mapNumber);
+    this.updateGameLog(`Map #${this.mapNumber}`, 'map', null);
     this.setSeed(this.mapNumber);
 
     this.pathfinder = new Pathfinder();
@@ -203,8 +203,8 @@ class Map {
   }
 
   addTown(x, y, board) {
-    const townBgDirtImg = "images/cd_" + this.rand(6) + ".png";
-    const townBgGrassImg = this.images["townBgGrass" + (this.rand(6) + 1)].img;
+    const townBgDirtImg = `images/cd_${this.rand(6)}.png`;
+    const townBgGrassImg = this.images[`townBgGrass${this.rand(6) + 1}`].img;
     const flipH = this.rand(2);
     const flipV = this.rand(2);
     const rotateDegrees = this.rand(360);
@@ -298,8 +298,8 @@ class Map {
           rotationDegrees: -1,
         }
 
-        gridImages[index].dirtBg.src = "images/ld_" + (this.rand(6) + 1) + ".png";
-        gridImages[index].grassBg = this.images["grassBg" + (this.rand(6) + 1)].img;
+        gridImages[index].dirtBg.src = `images/ld_${this.rand(6) + 1}.png`;
+        gridImages[index].grassBg = this.images[`grassBg${this.rand(6) + 1}`].img;
 
         const flipH = this.rand(2);
         const flipV = this.rand(2);
@@ -571,7 +571,7 @@ class Map {
       for (var y = 0; y < board.hw_ymax; y++) {
         const field = this.getField(x, y, board);
         if (field.type == "water") {
-          const seaBg = this.images["seaBg" + (this.rand(6) + 1)].img;
+          const seaBg = this.images[`seaBg${this.rand(6) + 1}`].img;
           const flipH = this.rand(2);
           const flipV = this.rand(2);
           const rotateDegrees = this.rand(2) * 180;
@@ -667,7 +667,7 @@ class Map {
       }
       board.hw_lAID = board.hw_lAID + 1;
       var alevel = -1; // TODO: find better value
-      var aname = "army" + board.hw_lAID;
+      var aname = `army${board.hw_lAID}`;
       board.armies[aname] = {};
       board.hw_aTL = alevel;
       board.armies[aname]._x = field._x;
@@ -702,7 +702,7 @@ class Map {
           var field = this.getField(x, y, board);
           var path = this.pathfinder.findPath(field, board.hw_parties_capitals[partyIndex], [], true);
           if (!path) {
-            console.warn("Path is undefined for (" + x + "," + y + ")");
+            console.warn(`Path is undefined for (${x},${y})`);
             continue;
           }
           field.profitability[partyIndex] = -path.length;
@@ -755,7 +755,7 @@ class Map {
             field.party = board.hw_parties_capitals[field.party].party;
             if (field.army) {
               this.setExplosion(field.army, field.army, null);
-              this.updateGameLog("Disbanded " + board.hw_parties_names[targetParty] + " army at (" + field.fx + ", " + field.fy + ")");
+              this.updateGameLog(`Disbanded ${board.hw_parties_names[targetParty]} army at (${field.fx}, ${field.fy})`, 'disband', board);
             }
           }
         }
@@ -886,14 +886,13 @@ class Map {
             board.subject = field;
             board.news = "province_conquered";
           }
-          self.updateGameLog(board.hw_parties_names[party] + " conquered " + board.hw_parties_names[field.party]);
+          self.updateGameLog(`${board.hw_parties_names[party]} conquered ${board.hw_parties_names[field.party]}`, 'conquest', board);
           return [50, 30];
         }
         if (board.human == party) {
           board.subject = field;
           board.news = "town_captured";
-          self.updateGameLog(board.hw_parties_names[party] + " captured former " + board.hw_parties_names[field.party] +
-            + " capital city from " + board.hw_parties_names[field.party]);
+          self.updateGameLog(`${board.hw_parties_names[party]} captured former ${board.hw_parties_names[field.party]} capital city from ${board.hw_parties_names[field.party]}`, 'conquest', board);
         }
         return [30, 20];
       }
@@ -902,10 +901,10 @@ class Map {
           board.subject = field;
           if (field.party >= 0) {
             board.news = "town_captured";
-            self.updateGameLog(board.hw_parties_names[party] + " captured town " + field.town_name + " from " + board.hw_parties_names[field.party]);
+            self.updateGameLog(`${board.hw_parties_names[party]} captured town ${field.town_name} from ${board.hw_parties_names[field.party]}`, 'capture', board);
           } else {
             board.news = "town_annexed";
-            self.updateGameLog(board.hw_parties_names[party] + " annexed town " + field.town_name);
+            self.updateGameLog(`${board.hw_parties_names[party]} annexed town ${field.town_name}`, 'annex', board);
           }
         }
         return [10, 10];
@@ -915,10 +914,10 @@ class Map {
           board.subject = field;
           if (field.party >= 0) {
             board.news = "town_captured";
-            self.updateGameLog(board.hw_parties_names[party] + " captured port " + field.town_name + " from " + board.hw_parties_names[field.party]);
+            self.updateGameLog(`${board.hw_parties_names[party]} captured port ${field.town_name} from ${board.hw_parties_names[field.party]}`, 'capture', board);
           } else {
             board.news = "town_annexed";
-            self.updateGameLog(board.hw_parties_names[party] + " annexed port " + field.town_name);
+            self.updateGameLog(`${board.hw_parties_names[party]} annexed port ${field.town_name}`, 'annex', board);
           }
         }
         return [5, 5];
@@ -1058,8 +1057,7 @@ class Map {
 
   moveArmy(army, field, board) {
     var afield = army.field;
-    this.updateGameLog(board.hw_parties_names[army.party] + " moved unit from " +
-      "(" + army.field.fx + "," + army.field.fy  + ") to (" + field.fx + "," + field.fy + ")");
+    this.updateGameLog(`${board.hw_parties_names[army.party]} moved unit from (${army.field.fx},${army.field.fy}) to (${field.fx},${field.fy})`, 'move', board);
 
     // Pact was just broken
     if (board.hw_peace >= 0
@@ -1217,9 +1215,50 @@ class Map {
     gamelogElement.innerHTML = "";
   }
 
-  updateGameLog(message) {
-    let gamelogElement = document.getElementById('gamelog');
-    gamelogElement.innerHTML += message + "<br/>";
+  updateGameLog(message, type = 'info', board = null) {
+    // Use the current turn container if available, otherwise fall back to gamelog element
+    const targetContainer = window.currentTurnLogContainer || document.getElementById('gamelog');
+    if (!targetContainer) return;
+    
+    // Get current turn number for grepping/searching
+    const turnNumber = board && board.turns !== undefined ? board.turns + 1 : '?';
+    
+    // Format party names with colors
+    let formattedMessage = message;
+    if (board && board.hw_parties_names) {
+      for (let i = 0; i < board.hw_parties_names.length; i++) {
+        const partyName = board.hw_parties_names[i];
+        const regex = new RegExp(partyName, 'g');
+        formattedMessage = formattedMessage.replace(regex, `<span class="party-name party-${i}">${partyName}</span>`);
+      }
+    }
+    
+    // Format coordinates
+    formattedMessage = formattedMessage.replace(/\((\d+),(\d+)\)/g, '<span class="log-coords">($1,$2)</span>');
+    
+    // Format town/port names (more flexible pattern)
+    formattedMessage = formattedMessage.replace(/(town|port) ([A-Z][a-zA-Z\s'\-]+?)(?:\s+from|\s+at|$)/g, 
+      (match, type, name) => {
+        const icon = type === 'town' ? '🏙️' : '⚓';
+        return `${icon} <strong>${name.trim()}</strong> `;
+      });
+    
+    // Add turn number to entry for grepping (visible but subtle)
+    const entry = `<div class="log-entry log-${type}" data-turn="${turnNumber}"><span class="log-turn-number">[T${turnNumber}]</span> ${formattedMessage}</div>`;
+    
+    if (targetContainer === window.currentTurnLogContainer) {
+      // Append to turn container
+      targetContainer.insertAdjacentHTML('beforeend', entry);
+    } else {
+      // Fallback: append directly to gamelog element
+      targetContainer.innerHTML += entry;
+    }
+    
+    // Auto-scroll to bottom
+    const gamelogElement = document.getElementById('gamelog');
+    if (gamelogElement) {
+      gamelogElement.scrollTop = gamelogElement.scrollHeight;
+    }
   }
 };
 

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <title>HexEmpireAI</title>
   <!-- Required meta tags -->
@@ -7,57 +8,109 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="/css/bootstrap.min.css" type="text/css">
+  <link rel="stylesheet" href="/css/game.css" type="text/css">
   <script src="/js/jquery-3.5.1.min.js"></script>
   <script src="/js/bootstrap.min.js"></script>
-  <style>
-    .gamelog {
-      overflow-y: scroll;
-      width: 800px;
-      height: 600px;
-    }
-  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 
 <body>
-  <div class="container">
-    <div class="row">
-      <div class="col-sm-12">
-        <form class="form-inline">
-          <div class="form-group">
-            <label for="mapNumber" class="sr-only">Map #</label>
-            <input type="text" class="form-control-plaintext" id="mapNumberInput" placeholder="Enter map number, ex. 999999">
-          </div>
-          <button type="button" class="btn btn-primary" id="changeMapButton">Change Map</button>
-          <button type="button" class="btn btn-primary" id="randomMapButton">Random Map</button>
-          <button type="button" class="btn btn-success" id="startBattleButton">Start Battle</button>
-        </form>
+  <div class="main-container">
+    <!-- Header & Controls -->
+    <div class="header">
+      <h1>HexEmpireAI</h1>
+      <div class="form-group">
+        <label for="mapNumberInput">Map #</label>
+        <input type="text" class="form-control" id="mapNumberInput" placeholder="e.g., 999999">
+      </div>
+      <div class="btn-group-custom">
+        <button type="button" class="btn btn-primary" id="changeMapButton">Change</button>
+        <button type="button" class="btn btn-primary" id="randomMapButton">Random</button>
+        <button type="button" class="btn btn-success" id="startBattleButton">Start</button>
+      </div>
+    </div>
 
+    <!-- Map Container -->
+    <div class="map-container">
+      <div class="status-bar">
+        <div class="status-item">
+          <span class="status-label">Map:</span>
+          <span class="status-value" id="mapNumberStatus">-</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Turn:</span>
+          <span class="status-value" id="turnStatus">1</span>
+        </div>
       </div>
-      <div class="col-sm-12">
-        <div id="mapStatus"><b>Map</b> , <b>Turn</b> 1</div>
-        <canvas id="map" width="800" height="600"></canvas>
+      <!-- Hidden element for backward compatibility -->
+      <div id="mapStatus" style="display: none;"><b>Map</b> , <b>Turn</b> 1</div>
+      <canvas id="map" width="800" height="600"></canvas>
+
+      <!-- Replay Controls (shown after game ends) -->
+      <div class="replay-controls-inline" id="replayControlsInline" style="display: none;">
+        <div class="replay-controls">
+          <button class="btn btn-sm btn-secondary" id="replayPrevBtn">⏮ Prev</button>
+          <button class="btn btn-sm btn-primary" id="replayPlayBtn">▶ Play</button>
+          <button class="btn btn-sm btn-secondary" id="replayNextBtn">Next ⏭</button>
+          <button class="btn btn-sm btn-outline-secondary" id="replayExitBtn" style="display: none;">Exit
+            Replay</button>
+          <span class="replay-turn-display" id="replayTurnDisplay">0 / 0</span>
+          <input type="range" class="replay-slider" id="replaySlider" min="0" max="0" value="0">
+        </div>
       </div>
-      <div class="col-sm-12">
-        <div id="accordion">
-          <div class="card">
-            <div class="card-header" id="headingGameLog">
-              <h2 class="mb-0">
-                <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseGameLog" aria-expanded="false">
-                  Game Log
-                </button>
-              </h2>
-            </div>
-            <div id="collapseGameLog" class="collapse" aria-labelledby="headingGameLog" data-parent="#accordion">
-              <div class="card-body">
-                <div id="gamelog"></div>
-              </div>
-            </div>
+    </div>
+
+    <!-- Game Log -->
+    <div class="game-log-container">
+      <div class="game-log-header" data-toggle="collapse" data-target="#collapseGameLog" aria-expanded="false">
+        <h3>Game Log</h3>
+        <span class="badge" id="logBadge">0</span>
+      </div>
+      <div id="collapseGameLog" class="collapse" aria-labelledby="headingGameLog">
+        <div class="log-filters">
+          <input type="text" class="log-search" id="logSearch" placeholder="Search log...">
+          <button class="log-filter-btn active" data-filter="all">All</button>
+          <button class="log-filter-btn" data-filter="conquest">Conquest</button>
+          <button class="log-filter-btn" data-filter="capture">Capture</button>
+          <button class="log-filter-btn" data-filter="move">Moves</button>
+          <button class="log-filter-btn" data-filter="annex">Annex</button>
+        </div>
+        <div id="gamelog"></div>
+      </div>
+    </div>
+
+    <!-- Statistics Graphs -->
+    <div class="stats-container">
+      <div class="stats-header" data-toggle="collapse" data-target="#collapseStats" aria-expanded="false">
+        <h3>Statistics</h3>
+      </div>
+      <div id="collapseStats" class="collapse" aria-labelledby="headingStats">
+        <div class="stats-content">
+          <div class="stats-tabs">
+            <button class="stats-tab active" data-tab="cities">Cities & Ports</button>
+            <button class="stats-tab" data-tab="army">Army Size</button>
+            <button class="stats-tab" data-tab="territory">Territory</button>
+            <button class="stats-tab" data-tab="morale">Morale</button>
+          </div>
+          <div id="statsChartCities" class="stats-chart-container">
+            <canvas id="citiesChart"></canvas>
+          </div>
+          <div id="statsChartArmy" class="stats-chart-container" style="display: none;">
+            <canvas id="armyChart"></canvas>
+          </div>
+          <div id="statsChartTerritory" class="stats-chart-container" style="display: none;">
+            <canvas id="territoryChart"></canvas>
+          </div>
+          <div id="statsChartMorale" class="stats-chart-container" style="display: none;">
+            <canvas id="moraleChart"></canvas>
           </div>
         </div>
       </div>
     </div>
+
   </div>
 
   <script src="/game/Main.js" type="module"></script>
 </body>
+
 </html>

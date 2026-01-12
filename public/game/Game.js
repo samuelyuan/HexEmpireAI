@@ -1,10 +1,15 @@
 import { Map } from './Map.js'
 import { MapRender } from './MapRender.js'
+import { Statistics } from './Statistics.js'
+import { Replay } from './Replay.js'
 
 class Game {
   constructor() {
     this.mapRender = new MapRender();
     this.images = this.prepareImages();
+    this.turns = 0;
+    this.statistics = new Statistics();
+    this.replay = new Replay();
   }
 
   prepareImages() {
@@ -88,6 +93,10 @@ class Game {
 
   generateNewMap(mapNumber) {
     this.mapNumber = mapNumber;
+    
+    // Reset statistics and replay when generating a new map
+    this.statistics.reset();
+    this.replay.reset();
 
     this.board = this.generateNewBoard();
     this.map = new Map(this.mapNumber, this.images);
@@ -111,6 +120,22 @@ class Game {
         let mapStatus = document.getElementById('mapStatus');
         mapStatus.innerHTML = "<b>Map</b> " + self.map.mapNumber + ", <b>Turn</b> " + (self.turns + 1);
 
+        // Update the map number input field
+        var mapNumberInput = document.getElementById('mapNumberInput');
+        if (mapNumberInput) {
+          mapNumberInput.value = self.map.mapNumber;
+        }
+        
+        // Directly update status display
+        var mapNumberStatus = document.getElementById('mapNumberStatus');
+        var turnStatus = document.getElementById('turnStatus');
+        if (mapNumberStatus) {
+          mapNumberStatus.textContent = self.map.mapNumber;
+        }
+        if (turnStatus) {
+          turnStatus.textContent = self.turns + 1;
+        }
+
         var startBattleButton = document.getElementById('startBattleButton');
         startBattleButton.disabled = false;
       });
@@ -125,6 +150,15 @@ class Game {
     }
     this.mapRender.drawMap(board, this.images);
     this.turns = 0;
+    
+    // Initialize replay system
+    this.replay.initialize(this.mapRender, this.images);
+    
+    // Collect initial statistics
+    this.statistics.collectStatistics(board, this.turns + 1);
+    
+    // Capture initial snapshot (Turn 0)
+    this.replay.captureSnapshot(board, 0);
   }
 
   isVictory() {
@@ -138,13 +172,41 @@ class Game {
 
     let mapStatus = document.getElementById('mapStatus');
     mapStatus.innerHTML = "<b>Map</b> " + this.map.mapNumber + ", <b>Turn</b> " + (this.turns + 1);
+    
+    // Directly update status display
+    var mapNumberStatus = document.getElementById('mapNumberStatus');
+    var turnStatus = document.getElementById('turnStatus');
+    if (mapNumberStatus) {
+      mapNumberStatus.textContent = this.map.mapNumber;
+    }
+    if (turnStatus) {
+      turnStatus.textContent = this.turns + 1;
+    }
 
     let gamelogElement = document.getElementById('gamelog');
-    gamelogElement.innerHTML += "Turn " + (this.turns + 1) + "<br/>";
+    const turnSection = `
+      <div class="log-turn-section">
+        <div class="log-turn-header">Turn ${this.turns + 1}</div>
+        <div class="log-turn-content"></div>
+      </div>
+    `;
+    gamelogElement.insertAdjacentHTML('beforeend', turnSection);
+    
+    // Get the current turn content container
+    const turnSections = gamelogElement.querySelectorAll('.log-turn-section');
+    const currentTurnContent = turnSections[turnSections.length - 1].querySelector('.log-turn-content');
+    window.currentTurnLogContainer = currentTurnContent;
 
     for (var turnParty = 0; turnParty < board.hw_parties_count; turnParty++) {
       this.runComputerTurn(map, board, turnParty);
     }
+    
+    // Collect statistics after turn completes
+    this.statistics.collectStatistics(board, this.turns + 1);
+    
+    // Capture snapshot for replay
+    this.replay.captureSnapshot(board, this.turns + 1);
+    
     this.turns++;
   }
 

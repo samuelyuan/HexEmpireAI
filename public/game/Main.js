@@ -1,8 +1,13 @@
 import { Game } from './Game.js'
+import { initializeUI } from './UI.js'
 
 $(function(){
   const game = new Game();
+  window.game = game; // Make game accessible for replay controls
   game.generateRandomMap();
+  
+  // Initialize UI handlers
+  initializeUI();
 
   var mapNumberInput = document.getElementById('mapNumberInput');
   var changeMapButton = document.getElementById('changeMapButton');
@@ -51,6 +56,9 @@ $(function(){
         changeMapButton.disabled = false;
         randomMapButton.disabled = false;
         startBattleButton.disabled = false;
+
+        // Enable replay after game ends
+        game.replay.enable(game.board);
 
         clearInterval(intervalId);
       }
