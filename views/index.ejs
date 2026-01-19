@@ -18,7 +18,6 @@
   <div class="main-container">
     <!-- Header & Controls -->
     <div class="header">
-      <h1>HexEmpireAI</h1>
       <div class="form-group">
         <label for="mapNumberInput">Map #</label>
         <input type="text" class="form-control" id="mapNumberInput" placeholder="e.g., 999999">
@@ -60,13 +59,20 @@
       </div>
     </div>
 
-    <!-- Game Log -->
-    <div class="game-log-container">
-      <div class="game-log-header" data-toggle="collapse" data-target="#collapseGameLog" aria-expanded="false">
-        <h3>Game Log</h3>
-        <span class="badge" id="logBadge">0</span>
+    <!-- Combined Tabs for Game Log and Statistics -->
+    <div class="info-panel-container">
+      <div class="info-panel-tabs">
+        <button class="info-panel-tab active" data-panel="log">
+          <span>Game Log</span>
+          <span class="badge" id="logBadge">0</span>
+        </button>
+        <button class="info-panel-tab" data-panel="stats">
+          <span>Statistics</span>
+        </button>
       </div>
-      <div id="collapseGameLog" class="collapse" aria-labelledby="headingGameLog">
+      
+      <!-- Game Log Panel -->
+      <div id="infoPanelLog" class="info-panel-content active">
         <div class="log-filters">
           <input type="text" class="log-search" id="logSearch" placeholder="Search log...">
           <button class="log-filter-btn active" data-filter="all">All</button>
@@ -77,14 +83,9 @@
         </div>
         <div id="gamelog"></div>
       </div>
-    </div>
 
-    <!-- Statistics Graphs -->
-    <div class="stats-container">
-      <div class="stats-header" data-toggle="collapse" data-target="#collapseStats" aria-expanded="false">
-        <h3>Statistics</h3>
-      </div>
-      <div id="collapseStats" class="collapse" aria-labelledby="headingStats">
+      <!-- Statistics Panel -->
+      <div id="infoPanelStats" class="info-panel-content">
         <div class="stats-content">
           <div class="stats-tabs">
             <button class="stats-tab active" data-tab="cities">Cities & Ports</button>

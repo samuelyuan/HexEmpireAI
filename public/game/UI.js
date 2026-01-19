@@ -183,7 +183,32 @@ export function initializeUI() {
     });
   }
 
-  // Statistics tab switching
+  // Info Panel tabs (Game Log / Statistics)
+  const infoPanelTabs = document.querySelectorAll('.info-panel-tab');
+  const infoPanelLog = document.getElementById('infoPanelLog');
+  const infoPanelStats = document.getElementById('infoPanelStats');
+
+  infoPanelTabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+      // Remove active class from all tabs and panels
+      infoPanelTabs.forEach(t => t.classList.remove('active'));
+      if (infoPanelLog) infoPanelLog.classList.remove('active');
+      if (infoPanelStats) infoPanelStats.classList.remove('active');
+      
+      // Add active class to clicked tab
+      this.classList.add('active');
+      
+      // Show corresponding panel
+      const panelName = this.dataset.panel;
+      if (panelName === 'log' && infoPanelLog) {
+        infoPanelLog.classList.add('active');
+      } else if (panelName === 'stats' && infoPanelStats) {
+        infoPanelStats.classList.add('active');
+      }
+    });
+  });
+
+  // Statistics tab switching (within stats panel)
   const statsTabs = document.querySelectorAll('.stats-tab');
   const statsCharts = {
     cities: document.getElementById('statsChartCities'),

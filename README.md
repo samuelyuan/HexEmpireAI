@@ -1,21 +1,52 @@
 # HexEmpireAI
 
-This project is based off of the flash game Hex Empire, but it's played by artificial intelligence. The goal of the game is to defeat all the other players and conquer the world.
+A strategic hex-based conquest game inspired by the flash game Hex Empire, where artificial intelligence players battle for world domination. Watch as AI-controlled armies compete to capture territories, cities, and ports in an automated turn-based strategy game.
 
-<div style="display:inline-block;">
-<img src="https://raw.githubusercontent.com/samuelyuan/HexEmpireAI/master/screenshots/map.png" alt="map" width="400" height="300" />
-</div>
+<img src="screenshots/map.png" alt="Game Map" width="425" height="300" />
 
-Rules
----
+## Features
 
-The game starts with 4 players, one in each corner, with a single army in the capital. Each army will be represented as armySize/morale, where morale is gained and lost depending on whether the player gains or loses territory. The turns are in counterclockwise order starting from Redosia (the red player) and each player can only move 5 armies per turn. In order to defeat their enemies, the enemy capital must be captured.
+- Turn-by-Turn Replay System: Rewatch the entire game with playback controls to see how territories changed hands
+- Statistics Graphs: Track game metrics over time with interactive charts showing:
+  - Cities & Ports held by each player
+  - Army sizes
+  - Territory control
+  - Morale levels
+- Organized Game Log: Browse game events by turn with collapsible sections, filtering by event type (Conquest, Capture, Moves, Annex), and search functionality
+- Modern UI: Clean, compact interface optimized for viewing and screenshots
+- Map Generation: Generate random maps or load specific maps by number
 
-The map has cities and ports, which should be captured to increase morale. Cities can provide more reinforcements at the end of each turn to increase the size of the army and ports can allow the player to pass through to the sea.
+## Game Rules
 
+### Setup
 
-Getting Started
----
+- 4 AI-controlled players start in each corner of the map
+- Each player begins with a single army at their capital
+- Players: Redosia (red), Violetnam (violet), Bluegaria (blue), Greenland (green)
+
+### Gameplay
+
+- Turn Order: Counterclockwise starting from Redosia (red player)
+- Army Movement: Each player can move up to 5 armies per turn
+- Army Representation: Displayed as `armySize/morale`
+  - Morale increases when gaining territory
+  - Morale decreases when losing territory
+
+### Victory Condition
+
+- Capture enemy capitals to eliminate opponents
+- Last player standing wins
+
+### Map Features
+
+- Cities: 
+  - Increase morale when captured
+  - Provide reinforcements at the end of each turn to increase army size
+- Ports: 
+  - Increase morale when captured
+  - Allow armies to pass through to sea routes
+
+## Getting Started
 
 1. Clone the project
 
