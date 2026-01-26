@@ -177,9 +177,17 @@ class Replay {
 
   /**
    * Start auto-playback
+   * If at the last turn, starts from beginning (turn 0)
+   * Otherwise starts from current turn
    */
   play(board) {
     if (this.isPlaying) return;
+    
+    // If at the last turn, restart from beginning
+    if (this.currentTurn >= this.snapshots.length - 1) {
+      this.currentTurn = 0;
+      this.renderTurn(0, board);
+    }
     
     this.isPlaying = true;
     this.isReplayMode = true;
@@ -274,7 +282,13 @@ class Replay {
     const exitBtn = document.getElementById('replayExitBtn');
     
     if (playBtn) {
-      playBtn.textContent = this.isPlaying ? '⏸ Pause' : '▶ Play';
+      if (this.isPlaying) {
+        playBtn.textContent = '⏸ Pause';
+      } else {
+        // Show "Restart" when at the end, otherwise "Play"
+        const isAtEnd = this.currentTurn >= this.snapshots.length - 1;
+        playBtn.textContent = isAtEnd ? '↻ Restart' : '▶ Play';
+      }
     }
     
     if (prevBtn) {

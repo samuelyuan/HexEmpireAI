@@ -74,6 +74,7 @@ class Game {
       duel: false,
       field: {},
       armies: {},
+      renderOffset: { x: 10, y: 10 }, // Canvas translation offset for map rendering
     };
   }
 

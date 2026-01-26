@@ -4,6 +4,13 @@ class MapRender {
     const ctx = document.getElementById('map').getContext('2d');
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Apply canvas translation offset
+    const offsetX = board.renderOffset?.x || 0;
+    const offsetY = board.renderOffset?.y || 0;
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+    
     ctx.drawImage(board.background_2, 0, 0);
     ctx.drawImage(board.background_sea, 0, 0);
 
@@ -48,6 +55,9 @@ class MapRender {
     this.drawTerritoryBorders(ctx, board);
 
     this.drawTownNames(ctx, board);
+    
+    // Restore canvas transformation
+    ctx.restore();
   }
 
   drawArmy(ctx, field, xCenter, yCenter) {

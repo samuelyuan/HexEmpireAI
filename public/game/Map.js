@@ -93,12 +93,18 @@ class Map {
   }
 
   getFieldXYFromScreenXY(board, screenX, screenY) {
-    const fieldX = Math.floor((screenX - (board.hw_fw / 2)) / (board.hw_fw / 4 * 3)) + 1;
+    // Account for render offset when converting screen coordinates
+    const offsetX = board.renderOffset?.x || 0;
+    const offsetY = board.renderOffset?.y || 0;
+    const adjustedX = screenX - offsetX;
+    const adjustedY = screenY - offsetY;
+    
+    const fieldX = Math.floor((adjustedX - (board.hw_fw / 2)) / (board.hw_fw / 4 * 3)) + 1;
     var fieldY;
     if (fieldX % 2 == 0) {
-      fieldY = Math.floor((screenY - (board.hw_fh / 2)) / board.hw_fh) + 1;
+      fieldY = Math.floor((adjustedY - (board.hw_fh / 2)) / board.hw_fh) + 1;
     } else {
-      fieldY = Math.floor((screenY - board.hw_fh) /  board.hw_fh) + 1;
+      fieldY = Math.floor((adjustedY - board.hw_fh) /  board.hw_fh) + 1;
     }
     return {
       fieldX: fieldX,
