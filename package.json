@@ -4,12 +4,14 @@
   "description": "Hex Empire AI Battle",
   "main": "server.js",
   "dependencies": {
-    "ejs": "^3.1.10",
+    "ejs": "^4.0.1",
     "express": "^5.2.1",
     "http": "^0.0.1-security",
     "serve-static": "^2.2.1"
   },
-  "devDependencies": {},
+  "overrides": {
+    "minimatch": "^10.2.1"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
