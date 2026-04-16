@@ -2,6 +2,12 @@ import { Map } from './Map.js'
 import { MapRender } from './MapRender.js'
 import { Statistics } from './Statistics.js'
 import { Replay } from './Replay.js'
+import { updateStatusBar } from './UI.js'
+
+/** Four fresh empty arrays (one per party) for board party-scoped lists. */
+function emptyPartyArrays() {
+  return Array.from({ length: 4 }, () => []);
+}
 
 class Game {
   constructor() {
@@ -13,22 +19,26 @@ class Game {
   }
 
   prepareImages() {
-    var images = {};
-    for (var i = 1; i <= 6; i++) {
-      images["grassBg" + i] = { img: null , path: 'images/l_' + i + '.png', status: 'none' };
+    const ref = (path) => ({ img: null, path, status: 'none' });
+    const images = {};
+
+    const numberedVariants = [
+      ['grassBg', 'l'],
+      ['seaBg', 'm'],
+      ['townBgGrass', 'c']
+    ];
+    for (const [prefix, letter] of numberedVariants) {
+      for (let i = 1; i <= 6; i++) {
+        images[prefix + i] = ref(`images/${letter}_${i}.png`);
+      }
     }
-    for (var i = 1; i <= 6; i++) {
-      images["seaBg" + i] = { img: null , path: 'images/m_' + i + '.png', status: 'none' };
-    }
-    for (var i = 1; i <= 6; i++) {
-      images["townBgGrass" + i] = { img: null , path: 'images/c_' + i + '.png', status: 'none' };
-    }
-    images["city"] = { img: null , path: 'images/city.png', status: 'none' };
-    images["port"] = { img: null , path: 'images/port.png', status: 'none' };
-    images["capital0"] = { img: null , path: 'images/capital_red.png', status: 'none' };
-    images["capital1"] = { img: null , path: 'images/capital_violet.png', status: 'none' };
-    images["capital2"] = { img: null , path: 'images/capital_blue.png', status: 'none' };
-    images["capital3"] = { img: null , path: 'images/capital_green.png', status: 'none' };
+
+    images.city = ref('images/city.png');
+    images.port = ref('images/port.png');
+    images.capital0 = ref('images/capital_red.png');
+    images.capital1 = ref('images/capital_violet.png');
+    images.capital2 = ref('images/capital_blue.png');
+    images.capital3 = ref('images/capital_green.png');
     return images;
   }
 
@@ -46,12 +56,12 @@ class Game {
       hw_parties_capitals: [],
       hw_parties_count: 4,
       hw_parties_names: ["Redosia","Violetnam","Bluegaria","Greenland"],
-      hw_parties_provinces_cp: [new Array(),new Array(),new Array(),new Array()],
-      hw_parties_towns: [new Array(), new Array(), new Array(), new Array()],
-      hw_parties_ports: [new Array(), new Array(), new Array(), new Array()],
-      hw_parties_lands: [new Array(), new Array(), new Array(), new Array()],
+      hw_parties_provinces_cp: emptyPartyArrays(),
+      hw_parties_towns: emptyPartyArrays(),
+      hw_parties_ports: emptyPartyArrays(),
+      hw_parties_lands: emptyPartyArrays(),
       hw_parties_morale: [10, 10, 10, 10],
-      hw_parties_armies: [new Array(), new Array(), new Array(), new Array()],
+      hw_parties_armies: emptyPartyArrays(),
       hw_parties_status: [1, 1, 1, 1],
       hw_parties_total_count: [0, 0, 0, 0],
       hw_parties_total_power: [0, 0, 0, 0],
@@ -118,23 +128,12 @@ class Game {
         self.map.calcAIHelpers(self.board);
         self.initGame();
 
-        let mapStatus = document.getElementById('mapStatus');
-        mapStatus.innerHTML = "<b>Map</b> " + self.map.mapNumber + ", <b>Turn</b> " + (self.turns + 1);
+        updateStatusBar(self.map.mapNumber, self.turns + 1);
 
         // Update the map number input field
         var mapNumberInput = document.getElementById('mapNumberInput');
         if (mapNumberInput) {
           mapNumberInput.value = self.map.mapNumber;
-        }
-        
-        // Directly update status display
-        var mapNumberStatus = document.getElementById('mapNumberStatus');
-        var turnStatus = document.getElementById('turnStatus');
-        if (mapNumberStatus) {
-          mapNumberStatus.textContent = self.map.mapNumber;
-        }
-        if (turnStatus) {
-          turnStatus.textContent = self.turns + 1;
         }
 
         var startBattleButton = document.getElementById('startBattleButton');
@@ -171,18 +170,7 @@ class Game {
     var map = this.map;
     board.turns = this.turns;
 
-    let mapStatus = document.getElementById('mapStatus');
-    mapStatus.innerHTML = "<b>Map</b> " + this.map.mapNumber + ", <b>Turn</b> " + (this.turns + 1);
-    
-    // Directly update status display
-    var mapNumberStatus = document.getElementById('mapNumberStatus');
-    var turnStatus = document.getElementById('turnStatus');
-    if (mapNumberStatus) {
-      mapNumberStatus.textContent = this.map.mapNumber;
-    }
-    if (turnStatus) {
-      turnStatus.textContent = this.turns + 1;
-    }
+    updateStatusBar(this.map.mapNumber, this.turns + 1);
 
     let gamelogElement = document.getElementById('gamelog');
     const turnSection = `

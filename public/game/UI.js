@@ -2,6 +2,23 @@
  * UI initialization and event handlers
  * Handles game log, filters, statistics tabs, and status updates
  */
+
+/** Updates the hidden #mapStatus copy and visible map # / turn row. displayTurn is 1-based. */
+export function updateStatusBar(mapNumber, displayTurn) {
+  const mapStatus = document.getElementById('mapStatus');
+  const mapNumberStatus = document.getElementById('mapNumberStatus');
+  const turnStatus = document.getElementById('turnStatus');
+  if (mapStatus) {
+    mapStatus.innerHTML = '<b>Map</b> ' + mapNumber + ', <b>Turn</b> ' + displayTurn;
+  }
+  if (mapNumberStatus) {
+    mapNumberStatus.textContent = mapNumber;
+  }
+  if (turnStatus) {
+    turnStatus.textContent = displayTurn;
+  }
+}
+
 export function initializeUI() {
   // Auto-scroll game log to bottom
   const gamelogElement = document.getElementById('gamelog');
@@ -10,59 +27,6 @@ export function initializeUI() {
       gamelogElement.scrollTop = gamelogElement.scrollHeight;
     });
     observer.observe(gamelogElement, { childList: true, subtree: true });
-  }
-
-  // Update status display from the hidden mapStatus element
-  const mapStatusElement = document.getElementById('mapStatus');
-  const mapNumberStatus = document.getElementById('mapNumberStatus');
-  const turnStatus = document.getElementById('turnStatus');
-  
-  function updateStatusDisplay() {
-    if (!mapStatusElement || !mapNumberStatus || !turnStatus) return;
-    
-    // Find Map and Turn label elements using DOM queries
-    const boldElements = mapStatusElement.querySelectorAll('b');
-    const mapLabel = boldElements[0];
-    const turnLabel = boldElements[1];
-    
-    if (mapLabel) {
-      // Get the text node after <b>Map</b>
-      const textNode = mapLabel.nextSibling;
-      if (textNode && textNode.nodeType === Node.TEXT_NODE) {
-        const mapText = textNode.textContent.trim();
-        // Extract number (remove comma if present)
-        const mapNumber = mapText.split(',')[0].trim();
-        if (mapNumber && !isNaN(mapNumber)) {
-          mapNumberStatus.textContent = mapNumber;
-        }
-      }
-    }
-    
-    if (turnLabel) {
-      // Get the text node after <b>Turn</b>
-      const textNode = turnLabel.nextSibling;
-      if (textNode && textNode.nodeType === Node.TEXT_NODE) {
-        const turnNumber = textNode.textContent.trim();
-        if (turnNumber && !isNaN(turnNumber)) {
-          turnStatus.textContent = turnNumber;
-        }
-      }
-    }
-  }
-  
-  if (mapStatusElement && mapNumberStatus && turnStatus) {
-    // Update immediately in case mapStatus already has content
-    updateStatusDisplay();
-    
-    const statusObserver = new MutationObserver(function() {
-      updateStatusDisplay();
-    });
-    statusObserver.observe(mapStatusElement, { 
-      childList: true, 
-      subtree: true, 
-      characterData: true,
-      attributes: true
-    });
   }
 
   // Log filtering and search

@@ -87,160 +87,56 @@ class Statistics {
       }
     };
 
-    // Settlements Chart (Cities + Ports combined)
-    if (!this.charts.cities) {
-      const ctx = document.getElementById('citiesChart');
-      if (ctx) {
-        this.charts.cities = new Chart(ctx, {
-          ...chartConfig,
-          data: {
-            labels: this.statistics.turns,
-            datasets: partyNames.map((name, i) => ({
-              label: name,
-              data: this.statistics.settlements[i],
-              borderColor: partyColors[i],
-              backgroundColor: partyColors[i].replace('0.8', '0.1'),
-              tension: 0.1
-            }))
-          },
-          options: {
-            ...chartConfig.options,
-            scales: {
-              ...chartConfig.options.scales,
-              y: {
-                ...chartConfig.options.scales.y,
-                title: {
-                  display: true,
-                  text: 'Cities & Ports'
-                }
-              }
-            }
-          }
-        });
+    const chartOptionsWithYTitle = (yTitle) => ({
+      ...chartConfig.options,
+      scales: {
+        ...chartConfig.options.scales,
+        y: {
+          ...chartConfig.options.scales.y,
+          title: { ...chartConfig.options.scales.y.title, text: yTitle }
+        }
       }
-    } else {
-      this.charts.cities.data.labels = this.statistics.turns;
-      partyNames.forEach((name, i) => {
-        this.charts.cities.data.datasets[i].data = this.statistics.settlements[i];
-      });
-      this.charts.cities.update();
-    }
+    });
 
-    // Army Size Chart
-    if (!this.charts.army) {
-      const ctx = document.getElementById('armyChart');
-      if (ctx) {
-        this.charts.army = new Chart(ctx, {
-          ...chartConfig,
-          data: {
-            labels: this.statistics.turns,
-            datasets: partyNames.map((name, i) => ({
-              label: name,
-              data: this.statistics.armySize[i],
-              borderColor: partyColors[i],
-              backgroundColor: partyColors[i].replace('0.8', '0.1'),
-              tension: 0.1
-            }))
-          },
-          options: {
-            ...chartConfig.options,
-            scales: {
-              ...chartConfig.options.scales,
-              y: {
-                ...chartConfig.options.scales.y,
-                title: {
-                  display: true,
-                  text: 'Army Size'
-                }
-              }
-            }
-          }
-        });
-      }
-    } else {
-      this.charts.army.data.labels = this.statistics.turns;
-      partyNames.forEach((name, i) => {
-        this.charts.army.data.datasets[i].data = this.statistics.armySize[i];
-      });
-      this.charts.army.update();
-    }
+    const buildPartyDatasets = (seriesPerParty) =>
+      partyNames.map((name, i) => ({
+        label: name,
+        data: seriesPerParty[i],
+        borderColor: partyColors[i],
+        backgroundColor: partyColors[i].replace('0.8', '0.1'),
+        tension: 0.1
+      }));
 
-    // Territory Chart
-    if (!this.charts.territory) {
-      const ctx = document.getElementById('territoryChart');
-      if (ctx) {
-        this.charts.territory = new Chart(ctx, {
-          ...chartConfig,
-          data: {
-            labels: this.statistics.turns,
-            datasets: partyNames.map((name, i) => ({
-              label: name,
-              data: this.statistics.territory[i],
-              borderColor: partyColors[i],
-              backgroundColor: partyColors[i].replace('0.8', '0.1'),
-              tension: 0.1
-            }))
-          },
-          options: {
-            ...chartConfig.options,
-            scales: {
-              ...chartConfig.options.scales,
-              y: {
-                ...chartConfig.options.scales.y,
-                title: {
-                  display: true,
-                  text: 'Territory Tiles'
-                }
-              }
-            }
-          }
-        });
-      }
-    } else {
-      this.charts.territory.data.labels = this.statistics.turns;
-      partyNames.forEach((name, i) => {
-        this.charts.territory.data.datasets[i].data = this.statistics.territory[i];
-      });
-      this.charts.territory.update();
-    }
+    const chartDefs = [
+      { chartKey: 'cities', canvasId: 'citiesChart', seriesKey: 'settlements', yTitle: 'Cities & Ports' },
+      { chartKey: 'army', canvasId: 'armyChart', seriesKey: 'armySize', yTitle: 'Army Size' },
+      { chartKey: 'territory', canvasId: 'territoryChart', seriesKey: 'territory', yTitle: 'Territory Tiles' },
+      { chartKey: 'morale', canvasId: 'moraleChart', seriesKey: 'morale', yTitle: 'Morale' }
+    ];
 
-    // Morale Chart
-    if (!this.charts.morale) {
-      const ctx = document.getElementById('moraleChart');
-      if (ctx) {
-        this.charts.morale = new Chart(ctx, {
+    for (const def of chartDefs) {
+      const series = this.statistics[def.seriesKey];
+      const existing = this.charts[def.chartKey];
+
+      if (!existing) {
+        const ctx = document.getElementById(def.canvasId);
+        if (!ctx) continue;
+        this.charts[def.chartKey] = new Chart(ctx, {
           ...chartConfig,
           data: {
             labels: this.statistics.turns,
-            datasets: partyNames.map((name, i) => ({
-              label: name,
-              data: this.statistics.morale[i],
-              borderColor: partyColors[i],
-              backgroundColor: partyColors[i].replace('0.8', '0.1'),
-              tension: 0.1
-            }))
+            datasets: buildPartyDatasets(series)
           },
-          options: {
-            ...chartConfig.options,
-            scales: {
-              ...chartConfig.options.scales,
-              y: {
-                ...chartConfig.options.scales.y,
-                title: {
-                  display: true,
-                  text: 'Morale'
-                }
-              }
-            }
-          }
+          options: chartOptionsWithYTitle(def.yTitle)
         });
+        continue;
       }
-    } else {
-      this.charts.morale.data.labels = this.statistics.turns;
-      partyNames.forEach((name, i) => {
-        this.charts.morale.data.datasets[i].data = this.statistics.morale[i];
+
+      existing.data.labels = this.statistics.turns;
+      partyNames.forEach((_, i) => {
+        existing.data.datasets[i].data = series[i];
       });
-      this.charts.morale.update();
+      existing.update();
     }
   }
 

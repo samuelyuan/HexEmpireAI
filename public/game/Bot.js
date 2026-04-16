@@ -1,3 +1,8 @@
+/** Sort moves by tmp_prof descending (higher profitability first). */
+function sortMovesByTmpProfDesc(a, b) {
+  return b.tmp_prof - a.tmp_prof;
+}
+
 class Bot {
   constructor(pathfinder) {
     this.pathfinder = pathfinder;
@@ -101,25 +106,13 @@ class Bot {
       }
       return totalProfitability;
     }
-    function orderMoves(a, b) {
-      // Sort by profitability
-      var aValue = a.tmp_prof;
-      var bValue = b.tmp_prof;
-      if (aValue > bValue) {
-        return -1;
-      }
-      if (aValue < bValue) {
-        return 1;
-      }
-      return 0;
-    }
     function findBestMoveVal(army) {
       var moves = self.pathfinder.getPossibleMoves(army.field, true, false);
       for (var i = 0; i < moves.length; i++) {
         moves[i].wait_for_support = false;
         moves[i].tmp_prof = finalProfitability(moves[i], army);
       }
-      moves.sort(orderMoves);
+      moves.sort(sortMovesByTmpProfDesc);
       return moves[0];
     }
     var movableArmies = this.getMovableArmies(party, board);
@@ -188,17 +181,6 @@ class Bot {
 
   supportArmy(party, army, field, board) {
     var self = this;
-    function orderMoves(a, b) {
-      var aValue = a.tmp_prof;
-      var bValue = b.tmp_prof;
-      if (aValue > bValue) {
-        return -1;
-      }
-      if (aValue < bValue) {
-        return 1;
-      }
-      return 0;
-    }
     function findBestMoveVal(army) {
       var moves = self.pathfinder.getPossibleMoves(army.field, true, false);
       var supportMoves = [];
@@ -209,7 +191,7 @@ class Bot {
           supportMoves.push(moves[i]);
         }
       }
-      supportMoves.sort(orderMoves);
+      supportMoves.sort(sortMovesByTmpProfDesc);
       return supportMoves[0];
     }
     var moveableArmies = this.getMovableArmies(party, board);
